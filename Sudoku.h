@@ -17,28 +17,24 @@ private:
     int sizeN;
 public:
 
-    Sudoku(std::vector<int> &arrAsLine, int sizeN) : arrAsLine(std::move(arrAsLine)), sizeN(sizeN) {
-        if (sizeN != sqrt(arrAsLine.size())) {
-            throw std::invalid_argument("Size of the Sudoku must match with the given size.");
-        }
-    }
+    Sudoku(std::vector<int> &arrAsLine, int sizeN);
 
-    inline const int *getRow(int i) const {
+    inline const int *getFromRow(int i) const {
         return arrAsLine.data() + sizeN * i;
     }
 
-    inline int *getRow(int i) {
+    inline int *getFromRow(int i) {
         return arrAsLine.data() + sizeN * i;
     }
 
-    inline std::vector<int> getRow() const {
-        // todo : implements
-    }
+    // todo : implements
+    std::vector<int> getRow(int y) const;
 
-    inline std::vector<int> getColumn(int i) const {
-        // todo : implements
-        // return *(arrAsColumn.data() + sizeN * i);
-    }
+    // todo : implements
+    // return *(arrAsColumn.data() + sizeN * i);
+    std::vector<int> getColumn(int x) const;
+
+    std::vector<int> getCell(int x, int y) const;
 
 };
 
