@@ -7,25 +7,19 @@
 
 
 #include <vector>
+#include <exception>
 #include <cmath>
+#include <stdexcept>
 
 class Sudoku {
 private:
     std::vector<int> arrAsLine;
-    std::vector<int *> arrAsColumn;
-    std::vector<int *> arrAsCell;
     int sizeN;
 public:
 
     Sudoku(std::vector<int> &arrAsLine, int sizeN) : arrAsLine(std::move(arrAsLine)), sizeN(sizeN) {
-        if(sizeN != sqrt(arrAsLine.size())) {
-            // probleme !
-        }
-
-        arrAsColumn.resize(arrAsLine.size());
-        for (int i = 0; i < arrAsLine.size(); ++i) {
-            // todo : algo
-            arrAsColumn[i] = (arrAsLine.data() + sizeN * i);
+        if (sizeN != sqrt(arrAsLine.size())) {
+            throw std::invalid_argument("Size of the Sudoku must match with the given size.");
         }
     }
 
@@ -37,12 +31,13 @@ public:
         return arrAsLine.data() + sizeN * i;
     }
 
-    inline const int *getColumn(int i) const {
-        return *(arrAsColumn.data() + sizeN * i);
+    inline std::vector<int> getRow() const {
+        // todo : implements
     }
 
-    inline int *getColumn(int i) {
-        return *(arrAsColumn.data() + sizeN * i);
+    inline std::vector<int> getColumn(int i) const {
+        // todo : implements
+        // return *(arrAsColumn.data() + sizeN * i);
     }
 
 };
