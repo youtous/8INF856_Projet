@@ -3,4 +3,4 @@ project(8INF856_Projet)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(8INF856_Projet main.cpp Sudoku.cpp)
+add_executable(8INF856_Projet src/main.cpp src/Sudoku.cpp src/grid.cpp)
