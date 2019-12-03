@@ -4,16 +4,18 @@
 
 #include <sstream>
 #include <iostream>
+#include <iomanip>
+#include <math.h>
 #include "sudoku.h"
 
 int main() {
     std::vector<int> testSudoku;
-    int n = 3;
+    int n = 6;
     int n2 = n * n;
     int n4 = n2 * n2;
     testSudoku.resize(n4);
     for (int i = 0; i < n4; ++i) {
-        testSudoku[i] = i;
+        testSudoku[i] = i % n2;
     }
 
     Sudoku sudoku(testSudoku, n);
@@ -70,30 +72,38 @@ std::vector<int> Sudoku::SudokuRow::vector() const {
 
 std::ostream &Sudoku::to_ostream(std::ostream &os) const {
     std::stringstream ss;
-    std::string separator;
-    separator.insert(0, this->cols, '-');
+    int digits = floor(log10(this->n)) + 1;
 
-    std::string lineSeparator("|");
-    lineSeparator.insert(0, this->cols - 2, '-');
-    lineSeparator.push_back('|');
-
-    ss << separator << std::endl;
+    ss << '+' << std::setfill('-') << std::setw(this->cols - 2) << '-' << '+' << std::endl;
     for (int i = 0; i < this->rows; ++i) {
-        ss << this->get(i) << std::endl;
-        if (i != 0 && i != this->cols - 1 && i % this->cols == 0) {
-            ss << lineSeparator << std::endl;
+        if (i != 0 && i != this->cols - 1 && i % this->n == 0) {
+            ss << '+';
+            for (int j = 0; j < this->cols + n; ++j) {
+                if ((j + 1) % n == 0) {
+                    ss << '+';
+                } else {
+                    ss << std::setfill('-') << std::setw(digits) << '-';
+                }
+            }
+            ss << std::endl;
         }
+        ss << this->get(i) << std::endl;
     }
-    ss << separator << std::endl;
+
+    ss << '+' << std::setfill('-') << std::setw(this->cols - 2) << '-' << '+' << std::endl;
     return os << ss.str();
 }
 
 std::ostream &Sudoku::SudokuRow::to_ostream(std::ostream &os) const {
     std::stringstream ss;
-    ss << "|";
+
+    // get the number of digits in a row https://stackoverflow.com/questions/6655754/finding-the-number-of-digits-of-an-integer
+    int digits = floor(log10(this->parent.n)) + 1;
     for (int j = 0; j < this->parent.cols; ++j) {
-        ss << this->parent.get(this->row, j) << " " << (j % this->parent.cols == 0 ? "|" : "");
+        ss << (j % this->parent.n == 0 ? "| " : "") << std::setw(digits)
+           << this->parent.get(this->row, j) << " ";
     }
+    ss << "|";
     return os << ss.str();
 }
 
