@@ -30,14 +30,11 @@ public:
 
     inline int getColumnSize() { return cols; }
 
-    // todo : implements
-    std::vector<int> getRow(int y) const;
+    std::vector<int> getCopyRow(int y) const;
 
-    // todo : implements
-    // return *(arrAsColumn.data() + sizeN * i);
-    std::vector<int> getColumn(int x) const;
+    std::vector<int> getCopyColumn(int x) const;
 
-    std::vector<int> getCell(int x, int y) const;
+    std::vector<int> getCopyCell(int x, int y) const;
 
     /**
      * Safe getter on matrix data.

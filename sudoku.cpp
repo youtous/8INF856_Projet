@@ -76,6 +76,25 @@ std::vector<int> Sudoku::SudokuRow::vector() const {
 
 // End of data access methods
 
+// Copy data access methods
+
+std::vector<int> Sudoku::getCopyRow(int y) const {
+    // todo : implements
+    return std::vector<int>();
+}
+
+std::vector<int> Sudoku::getCopyColumn(int x)  const {
+    // todo : implements
+    return std::vector<int>();
+}
+
+std::vector<int> Sudoku::getCopyCell(int x, int y)   const {
+    // todo : implements
+    return std::vector<int>();
+}
+
+// End of copy data access methods
+
 // Begin format methods
 
 std::ostream &Sudoku::to_ostream(std::ostream &os) const {
