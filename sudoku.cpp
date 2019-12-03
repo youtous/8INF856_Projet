@@ -51,9 +51,10 @@ void tests() {
     }
     std::cout << ss2.str() << std::endl;
 
-    std::cout << "Affichage de la cellule (0,2):" << std::endl;
+    sudoku.setCell(2, 2, {7, 3, 1, 2, 8, 9, 5, 4, 6});
+    std::cout << "Affichage de la cellule (2,2):" << std::endl;
     std::stringstream ss3;
-    auto vCell = sudoku.getCopyCell(0, 2);
+    auto vCell = sudoku.getCopyCell(2, 2);
     for (auto const &e: vCell) {
         ss3 << e << ",";
     }
@@ -157,6 +158,23 @@ void Sudoku::setColumn(int col, std::vector<int> const &columnVector) {
     }
     for (int i = 0; i < this->rows; ++i) {
         this->arrAsLine[i * this->cols + col] = columnVector[i];
+    }
+}
+
+void Sudoku::setCell(int cellX, int cellY, std::vector<int> const &cellVector) {
+    if ((this->n * this->n) != cellVector.size()) {
+        std::stringstream ss;
+        ss << "Set cell (" << cellX << "," << cellY << ") using a vector with a different size : cell size = "
+           << this->n * this->n
+           << ", vector size = " << cellVector.size();
+        throw std::out_of_range(ss.str());
+    }
+    int i = 0;
+    for (int x = cellX * this->n; x < (cellX + 1) * this->n; ++x) {
+        for (int y = cellY * this->n; y < (cellY + 1) * this->n; ++y) {
+            this->arrAsLine[this->cols * x + y] = cellVector[i];
+            i += 1;
+        }
     }
 }
 
