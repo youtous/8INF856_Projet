@@ -46,6 +46,14 @@ int main() {
         ss2 << e << ",";
     }
     std::cout << ss2.str() << std::endl;
+
+    std::cout << "Affichage de la cellule (0,2):" << std::endl;
+    std::stringstream ss3;
+    auto vCell = sudoku.getCopyCell(0, 2);
+    for (auto const &e: vCell) {
+        ss3 << e << ",";
+    }
+    std::cout << ss3.str() << std::endl;
     return 0;
 }
 
@@ -107,8 +115,15 @@ std::vector<int> Sudoku::getCopyColumn(int col) const {
 }
 
 std::vector<int> Sudoku::getCopyCell(int cellX, int cellY) const {
-    // todo : implements
-    return std::vector<int>();
+    std::vector<int> copyCell(this->n * this->n);
+    int i = 0;
+    for (int x = cellX * this->n; x < (cellX + 1) * this->n; ++x) {
+        for (int y = cellY * this->n; y < (cellY + 1) * this->n; ++y) {
+            copyCell[i] = this->arrAsLine[this->cols * x + y];
+            i += 1;
+        }
+    }
+    return copyCell;
 }
 
 // End of copy data access methods
