@@ -42,6 +42,7 @@ void tests() {
     }
     std::cout << ss.str() << std::endl;
 
+    sudoku.setColumn(2, {6, 3, 1, 2, 8, 9, 5, 4, 7});
     std::cout << "Affichage de la 3eme colonnee :" << std::endl;
     std::stringstream ss2;
     auto vCol = sudoku.getCopyColumn(2);
@@ -144,6 +145,18 @@ void Sudoku::setRow(int row, std::vector<int> const &rowVector) {
     }
     for (int i = 0; i < this->cols; ++i) {
         this->arrAsLine[row * this->cols + i] = rowVector[i];
+    }
+}
+
+void Sudoku::setColumn(int col, std::vector<int> const &columnVector) {
+    if (this->rows != columnVector.size()) {
+        std::stringstream ss;
+        ss << "Set column " << col << " using a vector with a different size : column size = " << this->rows
+           << ", vector size = " << columnVector.size();
+        throw std::out_of_range(ss.str());
+    }
+    for (int i = 0; i < this->rows; ++i) {
+        this->arrAsLine[i * this->cols + col] = columnVector[i];
     }
 }
 
