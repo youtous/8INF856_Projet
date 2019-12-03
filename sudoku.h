@@ -30,11 +30,11 @@ public:
 
     inline int getColumnSize() { return cols; }
 
-    std::vector<int> getCopyRow(int y) const;
+    std::vector<int> getCopyRow(int row) const;
 
-    std::vector<int> getCopyColumn(int x) const;
+    std::vector<int> getCopyColumn(int col) const;
 
-    std::vector<int> getCopyCell(int x, int y) const;
+    std::vector<int> getCopyCell(int cellX, int cellY) const;
 
     /**
      * Safe getter on matrix data.
