@@ -9,8 +9,13 @@
 #include "sudoku.h"
 
 int main() {
+    tests();
+    return 0;
+}
+
+void tests() {
     std::vector<int> testSudoku;
-    int n = 6;
+    int n = 3;
     int n2 = n * n;
     int n4 = n2 * n2;
     testSudoku.resize(n4);
@@ -28,9 +33,7 @@ int main() {
         }
     }
 
-    std::cout << "Affichage du sudoku :" << std::endl
-              << sudoku << std::endl;;
-
+    sudoku.setRow(2, {4, 3, 1, 2, 8, 9, 5, 6, 7});
     std::cout << "Affichage de la 3eme ligne :" << std::endl;
     std::stringstream ss;
     auto v = sudoku.getCopyRow(2);
@@ -54,7 +57,10 @@ int main() {
         ss3 << e << ",";
     }
     std::cout << ss3.str() << std::endl;
-    return 0;
+
+
+    std::cout << "Affichage du sudoku :" << std::endl
+              << sudoku << std::endl;
 }
 
 Sudoku::Sudoku(std::vector<int> &initArr, int n) : arrAsLine(std::move(initArr)), n(n), rows(n * n), cols(n * n) {
@@ -127,6 +133,19 @@ std::vector<int> Sudoku::getCopyCell(int cellX, int cellY) const {
 }
 
 // End of copy data access methods
+
+// Begin data setters methods
+void Sudoku::setRow(int row, std::vector<int> const &rowVector) {
+    if (this->cols != rowVector.size()) {
+        std::stringstream ss;
+        ss << "Set row " << row << " using a vector with a different size : row size = " << this->cols
+           << ", vector size = " << rowVector.size();
+        throw std::out_of_range(ss.str());
+    }
+    for (int i = 0; i < this->cols; ++i) {
+        this->arrAsLine[row * this->cols + i] = rowVector[i];
+    }
+}
 
 // Begin format methods
 

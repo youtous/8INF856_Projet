@@ -36,6 +36,12 @@ public:
 
     std::vector<int> getCopyCell(int cellX, int cellY) const;
 
+    void setRow(int row, std::vector<int> const &rowVector);
+
+    void setColumn(int col, std::vector<int> const &columnVector);
+
+    void setCell(int cellX, int cellY, std::vector<int> const &cellVector) const;
+
     /**
      * Safe getter on matrix data.
      * @param row
@@ -132,5 +138,7 @@ public:
         return {*this, row};
     }
 };
+
+void tests();
 
 #endif //INC_8INF856_PROJET_SUDOKU_H
