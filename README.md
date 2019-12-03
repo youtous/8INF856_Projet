@@ -22,3 +22,6 @@
 ========================
 - Best essay about sudoku solving problem : http://norvig.com/sudoku.html
 - Related implementation in C++: https://github.com/pauek/norvig-sudoku/blob/master/sudoku.en.cc
+
+====
+Simple sudoku solver in C : https://github.com/joubu/SudokuSolver/blob/master/sudoku.c

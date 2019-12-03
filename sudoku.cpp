@@ -14,11 +14,19 @@ int main() {
     int n2 = n * n;
     int n4 = n2 * n2;
     testSudoku.resize(n4);
-    for (int i = 0; i < n4; ++i) {
-        testSudoku[i] = i % n2;
-    }
 
     Sudoku sudoku(testSudoku, n);
+    for (int x = 0; x < n; ++x) {
+        for (int y = 0; y < n; ++y) {
+            // work on a single cell
+            int start = 1;
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < n; ++j) {
+                    sudoku[x * n + i][y * n + j] = start++;
+                }
+            }
+        }
+    }
 
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;;
@@ -73,7 +81,6 @@ std::vector<int> Sudoku::SudokuRow::vector() const {
 std::ostream &Sudoku::to_ostream(std::ostream &os) const {
     std::stringstream ss;
     int digits = (floor(log10(this->n)) + 1) + 1;
-    std::cerr << "nb digits: " << digits << std::endl;
 
     for (int j = 0; j < this->cols; ++j) {
         ss << (j % n == 0 ? "+-" : "") << std::setfill('-') << std::setw(digits) << '-'
