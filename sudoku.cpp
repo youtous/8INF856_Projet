@@ -14,13 +14,11 @@ int main() {
 }
 
 void tests() {
-    std::vector<int> testSudoku;
     int n = 3;
     int n2 = n * n;
     int n4 = n2 * n2;
-    testSudoku.resize(n4);
 
-    Sudoku sudoku(testSudoku, n);
+    Sudoku sudoku(n);
     for (int x = 0; x < n; ++x) {
         for (int y = 0; y < n; ++y) {
             // work on a single cell
@@ -65,7 +63,9 @@ void tests() {
               << sudoku << std::endl;
 }
 
-Sudoku::Sudoku(std::vector<int> &initArr, int n) : arrAsLine(std::move(initArr)), n(n), rows(n * n), cols(n * n) {
+Sudoku::Sudoku(int n) : arrAsLine(std::vector<int>(n * n * n * n)), n(n), rows(n * n), cols(n * n) {};
+
+Sudoku::Sudoku(int n, std::vector<int> &&initArr) : arrAsLine(std::move(initArr)), n(n), rows(n * n), cols(n * n) {
     double squaredNCheck = sqrt(sqrt(this->arrAsLine.size()));
     if (((double) this->n) != squaredNCheck) {
         std::stringstream errMsg;
