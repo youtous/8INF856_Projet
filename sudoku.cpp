@@ -72,25 +72,29 @@ std::vector<int> Sudoku::SudokuRow::vector() const {
 
 std::ostream &Sudoku::to_ostream(std::ostream &os) const {
     std::stringstream ss;
-    int digits = floor(log10(this->n)) + 1;
+    int digits = (floor(log10(this->n)) + 1) + 1;
+    std::cerr << "nb digits: " << digits << std::endl;
 
-    ss << '+' << std::setfill('-') << std::setw(this->cols - 2) << '-' << '+' << std::endl;
+    for (int j = 0; j < this->cols; ++j) {
+        ss << (j % n == 0 ? "+-" : "") << std::setfill('-') << std::setw(digits) << '-'
+           << (j == this->cols - 1 ? "+" : "");
+    }
+    ss << std::endl;
     for (int i = 0; i < this->rows; ++i) {
         if (i != 0 && i != this->cols - 1 && i % this->n == 0) {
-            ss << '+';
-            for (int j = 0; j < this->cols + n; ++j) {
-                if ((j + 1) % n == 0) {
-                    ss << '+';
-                } else {
-                    ss << std::setfill('-') << std::setw(digits) << '-';
-                }
+            for (int j = 0; j < this->cols; ++j) {
+                ss << (j % n == 0 ? "+-" : "") << std::setfill('-') << std::setw(digits) << '-'
+                   << (j == this->cols - 1 ? "+" : "");
             }
             ss << std::endl;
         }
         ss << this->get(i) << std::endl;
     }
 
-    ss << '+' << std::setfill('-') << std::setw(this->cols - 2) << '-' << '+' << std::endl;
+    for (int j = 0; j < this->cols; ++j) {
+        ss << (j % n == 0 ? "+-" : "") << std::setfill('-') << std::setw(digits) << '-'
+           << (j == this->cols - 1 ? "+" : "");
+    }
     return os << ss.str();
 }
 
