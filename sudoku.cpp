@@ -80,7 +80,7 @@ std::vector<int> Sudoku::SudokuRow::vector() const {
 
 std::ostream &Sudoku::to_ostream(std::ostream &os) const {
     std::stringstream ss;
-    int digits = (floor(log10(this->n)) + 1) + 1;
+    int digits = (floor(log10(this->n * this->n)) + 1) + 1;
 
     for (int j = 0; j < this->cols; ++j) {
         ss << (j % n == 0 ? "+-" : "") << std::setfill('-') << std::setw(digits) << '-'
@@ -108,8 +108,9 @@ std::ostream &Sudoku::to_ostream(std::ostream &os) const {
 std::ostream &Sudoku::SudokuRow::to_ostream(std::ostream &os) const {
     std::stringstream ss;
 
-    // get the number of digits in a row https://stackoverflow.com/questions/6655754/finding-the-number-of-digits-of-an-integer
-    int digits = floor(log10(this->parent.n)) + 1;
+    // get the number of digits in a row using the max value which can fit in a cell
+    // https://stackoverflow.com/questions/6655754/finding-the-number-of-digits-of-an-integer
+    int digits = floor(log10(this->parent.n * this->parent.n)) + 1;
     for (int j = 0; j < this->parent.cols; ++j) {
         ss << (j % this->parent.n == 0 ? "| " : "") << std::setw(digits)
            << this->parent.get(this->row, j) << " ";
