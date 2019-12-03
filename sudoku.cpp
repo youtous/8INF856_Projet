@@ -30,6 +30,14 @@ int main() {
 
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;;
+
+    std::cout << "Affichage de la 3eme ligne :" << std::endl;
+    std::stringstream ss;
+    auto v = sudoku.getCopyRow(2);
+    for (auto const &e: v) {
+        ss << e << ",";
+    }
+    std::cout << ss.str() << std::endl;;
     return 0;
 }
 
@@ -79,16 +87,15 @@ std::vector<int> Sudoku::SudokuRow::vector() const {
 // Copy data access methods
 
 std::vector<int> Sudoku::getCopyRow(int y) const {
+    return {std::begin(this->arrAsLine) + y * this->cols, std::begin(this->arrAsLine) + (y + 1) * this->cols};
+}
+
+std::vector<int> Sudoku::getCopyColumn(int x) const {
     // todo : implements
     return std::vector<int>();
 }
 
-std::vector<int> Sudoku::getCopyColumn(int x)  const {
-    // todo : implements
-    return std::vector<int>();
-}
-
-std::vector<int> Sudoku::getCopyCell(int x, int y)   const {
+std::vector<int> Sudoku::getCopyCell(int x, int y) const {
     // todo : implements
     return std::vector<int>();
 }
