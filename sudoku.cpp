@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <math.h>
 #include <mpi.h>
+#include <omp.h>
 #include "sudoku.h"
 
 int main(int argc, char *argv[]) {
@@ -20,8 +21,8 @@ int main(int argc, char *argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
     // does not work for the moment
-    if(processId == 0) {
-        testFromStdin();
+    if (processId == 0) {
+        solve();
     }
 
     // tests();
@@ -31,11 +32,34 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+void solve() {
+    int processId;                              /* Process rank */
+    int countProcess;                           /* Number of processes */
+
+    bool isSolved = false;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+    MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
+
+    Sudoku sudoku = createFromStdin();
+
+    #pragma omp parallel shared(isSolved)
+    {
+        int threadId = omp_get_thread_num();
+        int countThreads = omp_get_num_threads();
+
+
+        std::cout << "m[" << processId << "]{" << threadId << "}" << "hello ! I have " << countThreads << " friends" <<
+                  std::endl;
+    }
+}
+
 void testFromStdin() {
     Sudoku sudoku = createFromStdin();
 
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;
+
 }
 
 void tests() {

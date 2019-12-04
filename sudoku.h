@@ -303,5 +303,6 @@ void tests();
  * Function used for tests
  */
 void testFromStdin();
+void solve();
 
 #endif //INC_8INF856_PROJET_SUDOKU_H

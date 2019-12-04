@@ -3,7 +3,7 @@
 .PHONY=sync
 
 CC=mpic++
-CFLAGS=-std=c++11
+CFLAGS=-std=c++11 -fopenmp
 LDFLAGS=
 
 sudoku.o: sudoku.cpp ## Compile sequential app
