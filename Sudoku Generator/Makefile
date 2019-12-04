@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-std=c++1z
+CFLAGS=-std=c++17
 LDFLAGS=-O3 -c
 
 # Execute Sudoku generator

@@ -31,6 +31,7 @@ class SudokuBoard {
 public:
     SudokuBoard();
     void fillCells();
+    bool writeInFile();
     std::string serialize();
 
 private:
@@ -39,18 +40,6 @@ private:
     std::shared_ptr<SudokuCell> at(coord position);
 };
 
-SudokuBoard generateAndFillBoard();
+SudokuBoard generateAndFillBoard(int cellSize);
 void generateAndFillBoards(int numBoards);
-
-
-#ifdef WASM
-#include <emscripten/bind.h>
-
-EMSCRIPTEN_BINDINGS(sudoku_gen) {
-  emscripten::function("generateAndFillBoard", &generateAndFillBoard);
-  emscripten::function("generateAndFillBoards", &generateAndFillBoards);
-
-  emscripten::class_<SudokuBoard>("SudokuBoard")
-    .function("serialize", &SudokuBoard::serialize);
-}
-#endif
+void initValidValues();

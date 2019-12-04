@@ -4,10 +4,11 @@
 #include <vector>
 #include <algorithm>
 #include <random>
+#include <fstream>
 
-constexpr int SIZE = 9;
-constexpr int THIRD = SIZE / 3;
-const std::set<int> VALID_VALUES = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+int BOARD_SIZE = 9;
+int CELL_SIZE = BOARD_SIZE / 3;
+std::set<int> VALID_VALUES = {};
 std::random_device rd;
 std::mt19937 randomGen(rd());
 
@@ -35,12 +36,12 @@ void SudokuCell::generateOptimalNeighbors () {
         neighbors.insert({pos.i, j});
     }
 
-    auto iFloor = (pos.i / THIRD) * THIRD;
-    auto jFloor = (pos.j / THIRD) * THIRD;
+    auto iFloor = (pos.i / CELL_SIZE) * CELL_SIZE;
+    auto jFloor = (pos.j / CELL_SIZE) * CELL_SIZE;
 
     // generate block neighbors
     for (int i = iFloor; i <= pos.i ; ++i) {
-        for (int j = jFloor; (i < pos.i && j < jFloor + THIRD) || j < pos.j ; ++j) {
+        for (int j = jFloor; (i < pos.i && j < jFloor + CELL_SIZE) || j < pos.j ; ++j) {
             neighbors.insert({i, j});
         }
     }
@@ -51,8 +52,8 @@ void SudokuCell::generateOptimalNeighbors () {
  */
 coord resolveIndex(int index) {
     return coord{
-        index / SIZE,
-        index % SIZE
+            index / BOARD_SIZE,
+            index % BOARD_SIZE
     };
 }
 
@@ -60,12 +61,18 @@ coord resolveIndex(int index) {
  * Take coord and return index
  */
 int resolvePosition(const coord &position) {
-    return position.i * SIZE + position.j;
+    return position.i * BOARD_SIZE + position.j;
+}
+
+void initValidValues(){
+    for (int i = 1; i <= BOARD_SIZE; ++i) {
+        VALID_VALUES.insert(i);
+    }
 }
 
 SudokuBoard::SudokuBoard() {
-    for(int i = 0; i < SIZE; i++) {
-        for (int j = 0; j < SIZE; j++) {
+    for(int i = 0; i < BOARD_SIZE; i++) {
+        for (int j = 0; j < BOARD_SIZE; j++) {
             auto cell = std::make_shared<SudokuCell>(SudokuCell());
             cell->setPosition({i, j});
             cells.push_back(cell);
@@ -142,7 +149,31 @@ std::shared_ptr<SudokuCell> SudokuBoard::at(coord position) {
     return this->at(index);
 }
 
-SudokuBoard generateAndFillBoard() {
+bool SudokuBoard::writeInFile() {
+
+    std::ofstream file;
+    long counter = 1;
+    file.open ("grille.txt");
+    file << sqrt(BOARD_SIZE) << std::endl;
+    for(auto cell: cells) {
+        if (counter != BOARD_SIZE) {
+            file << cell->value << ' ';
+            counter++;
+        } else {
+            file << std::endl;
+            counter = 1;
+        }
+    }
+    file.close();
+
+    return false;
+}
+
+SudokuBoard generateAndFillBoard(int cellSize) {
+    BOARD_SIZE = cellSize * cellSize;
+    CELL_SIZE = cellSize;
+    initValidValues();
+
     SudokuBoard board{};
     board.fillCells();
     return board;
