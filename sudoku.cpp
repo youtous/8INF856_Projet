@@ -60,11 +60,16 @@ void tests() {
     std::cout << ss3.str() << std::endl;
 
 
-    std::cout << "Affichage du sudoku :" << std::endl
-              << sudoku << std::endl;
+//    std::cout << "Affichage du sudoku :" << std::endl
+//              << sudoku << std::endl;
 
     std::cout << "Write in test_sudoku.txt" << std::endl;
     writeInFile("test_sudoku.txt", sudoku.export_str());
+
+    std::cout << "Load from file a copy of the sudoku" << std::endl;
+    Sudoku sudokuFromFile = createFromFile("test_sudoku.txt");
+    std::cout << "Affichage du sudoku copié :" << std::endl
+              << sudokuFromFile << std::endl;
 }
 
 Sudoku::Sudoku(int n) : arrAsLine(std::vector<int>(n * n * n * n)), n(n), rows(n * n), cols(n * n) {};
@@ -79,6 +84,30 @@ Sudoku::Sudoku(int n, std::vector<int> &&initArr) : arrAsLine(std::move(initArr)
         throw std::invalid_argument(errMsg.str());
     }
 
+}
+
+Sudoku createFromFile(std::string const &fileName) {
+    std::ifstream inputFile;
+    inputFile.open(fileName);
+
+    if (inputFile.fail()) {
+        throw std::iostream::failure("Could not open file.");
+    }
+
+    int n;
+    inputFile >> n;
+
+    Sudoku sudoku(n);
+
+    int currentValue;
+    for (int x = 0; x < sudoku.getColumnSize(); ++x) {
+        for (int y = 0; y < sudoku.getRowSize(); ++y) {
+            inputFile >> currentValue;
+            sudoku[x][y] = currentValue;
+        }
+    }
+
+    return sudoku;
 }
 
 // Begin of data access methods
@@ -244,9 +273,10 @@ void writeInFile(std::string const &fileName, std::string const &contentFile) {
     std::ofstream mFile;
     mFile.exceptions(std::ifstream::badbit);
     mFile.open(fileName);
+    if (mFile.fail()) {
+        throw std::iostream::failure("Could not open file.");
+    }
     mFile << contentFile;
     mFile.close();
 }
-
-
 // End of format methods

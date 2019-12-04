@@ -278,6 +278,13 @@ public:
 void tests();
 
 /**
+ * Create a Sudoku from a saved instance contained in a file.
+ * @param fileName - file containing Sudoku's data.
+ * @return - Sudoku initiated from the File.
+ */
+Sudoku createFromFile(std::string const &fileName);
+
+/**
  * Write in a File a given content.
  * @param fileName - path of the file to write.
  * @param contentFile - content of the file to set.
