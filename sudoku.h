@@ -273,11 +273,6 @@ public:
 };
 
 /**
- * Function used for tests
- */
-void tests();
-
-/**
  * Create a Sudoku from a saved instance contained in a file.
  * @param fileName - file containing Sudoku's data.
  * @return - Sudoku initiated from the File.
@@ -285,10 +280,29 @@ void tests();
 Sudoku createFromFile(std::string const &fileName);
 
 /**
+ * Create a Sudoku from an array, the first element contains
+ * the size of the Sudoku.
+ * @param fileName - file containing Sudoku's data.
+ * @return - Sudoku initiated from the File.
+ */
+Sudoku createFromArray(int arrC, char *arr[]);
+
+/**
  * Write in a File a given content.
  * @param fileName - path of the file to write.
  * @param contentFile - content of the file to set.
  */
 void writeInFile(std::string const &fileName, std::string const &contentFile);
+
+
+/**
+ * Function used for tests
+ */
+void tests();
+
+/**
+ * Function used for tests
+ */
+void testFromStdin(int argc, char *argv[]);
 
 #endif //INC_8INF856_PROJET_SUDOKU_H
