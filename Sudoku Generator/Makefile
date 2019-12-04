@@ -1,13 +1,15 @@
-run-native: sudoku-gen
-	./sudoku-gen 100
+CC=g++
+CFLAGS=-std=c++1z
+LDFLAGS=-O3 -c
 
-# build linux binary
+# Execute Sudoku generator
 sudoku-gen: main.o sudoku-gen.o
-	g++ -std=c++1z $? -o sudoku-gen
+	$(CC) $(CFLAGS) $? -o $@
 
-# build all object files for linux
+# Build all
 %.o: %.cpp
-	g++ -std=c++1z -O3 -c $< -o $@
+	$(CC) $(CFLAGS) $(LDFLAGS) $< -o $@
 
 clean: ## Clean the project
 	rm -f *.o
+
