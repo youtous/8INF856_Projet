@@ -221,4 +221,19 @@ std::ostream &Sudoku::SudokuRow::to_ostream(std::ostream &os) const {
     return os << ss.str();
 }
 
+
+std::string Sudoku::export_str() const {
+    std::stringstream exportStr;
+    exportStr << n;
+
+    for (int i = 0; i < this->arrAsLine.size(); ++i) {
+        if (i % this->cols == 0) {
+            exportStr << std::endl;
+        }
+        exportStr << arrAsLine[i] << " ";
+
+    }
+    return exportStr.str();
+}
+
 // End of format methods

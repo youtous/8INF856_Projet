@@ -145,6 +145,11 @@ public:
     }
 
     /**
+     * @return - the Sudoku formated with a first value for N, then grid values
+     */
+    std::string export_str() const;
+
+    /**
      * SudokuRow represents a row of the Matrix.
      */
     class SudokuRow {
