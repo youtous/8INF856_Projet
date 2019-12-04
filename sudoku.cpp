@@ -19,20 +19,20 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
-    std::cerr << "count arguments : " << argc << std::endl;
-
     // does not work for the moment
-    // testFromStdin(argc, argv);
+    if(processId == 0) {
+        testFromStdin();
+    }
 
-    tests();
+    // tests();
+
 
     MPI_Finalize();
     return 0;
 }
 
-void testFromStdin(int argc, char *argv[]) {
-
-    Sudoku sudoku = createFromArray(argc - 1, argv + 1);
+void testFromStdin() {
+    Sudoku sudoku = createFromStdin();
 
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;
@@ -134,12 +134,15 @@ Sudoku createFromFile(std::string const &fileName) {
     return sudoku;
 }
 
-Sudoku createFromArray(int arrC, char *arr[]) {
-    Sudoku sudoku(std::atoi(arr[0]));
+Sudoku createFromStdin() {
+    int val;
+    std::cin >> val;
+    Sudoku sudoku(val);
 
     for (int x = 0; x < sudoku.getColumnSize(); ++x) {
         for (int y = 0; y < sudoku.getRowSize(); ++y) {
-            sudoku[x][y] = std::atoi(*(arr + sudoku.getRowSize() * x + y + 1));
+            std::cin >> val;
+            sudoku[x][y] = val;
         }
     }
 

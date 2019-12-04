@@ -280,12 +280,11 @@ public:
 Sudoku createFromFile(std::string const &fileName);
 
 /**
- * Create a Sudoku from an array, the first element contains
+ * Create a Sudoku from an stdin, the first element contains
  * the size of the Sudoku.
- * @param fileName - file containing Sudoku's data.
  * @return - Sudoku initiated from the File.
  */
-Sudoku createFromArray(int arrC, char *arr[]);
+Sudoku createFromStdin();
 
 /**
  * Write in a File a given content.
@@ -303,6 +302,6 @@ void tests();
 /**
  * Function used for tests
  */
-void testFromStdin(int argc, char *argv[]);
+void testFromStdin();
 
 #endif //INC_8INF856_PROJET_SUDOKU_H
