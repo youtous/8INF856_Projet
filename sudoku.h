@@ -277,4 +277,11 @@ public:
  */
 void tests();
 
+/**
+ * Write in a File a given content.
+ * @param fileName - path of the file to write.
+ * @param contentFile - content of the file to set.
+ */
+void writeInFile(std::string const &fileName, std::string const &contentFile);
+
 #endif //INC_8INF856_PROJET_SUDOKU_H

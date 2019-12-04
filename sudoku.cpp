@@ -4,6 +4,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <math.h>
 #include "sudoku.h"
@@ -61,6 +62,9 @@ void tests() {
 
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;
+
+    std::cout << "Write in test_sudoku.txt" << std::endl;
+    writeInFile("test_sudoku.txt", sudoku.export_str());
 }
 
 Sudoku::Sudoku(int n) : arrAsLine(std::vector<int>(n * n * n * n)), n(n), rows(n * n), cols(n * n) {};
@@ -235,5 +239,14 @@ std::string Sudoku::export_str() const {
     }
     return exportStr.str();
 }
+
+void writeInFile(std::string const &fileName, std::string const &contentFile) {
+    std::ofstream mFile;
+    mFile.exceptions(std::ifstream::badbit);
+    mFile.open(fileName);
+    mFile << contentFile;
+    mFile.close();
+}
+
 
 // End of format methods
