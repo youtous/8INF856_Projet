@@ -10,6 +10,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <deque>
+#include <utility>
 
 /**
  * SudokuBoard class represents a grid a the sudoku game.
@@ -72,6 +73,12 @@ public:
      * @return - size of a column
      */
     inline int getColumnSize() const { return cols; }
+
+    /**
+     * @complexity - O(1) - constant
+     * @return - size of a block
+     */
+    inline int getBlockSize() const { return cols; }
 
     /**
      * @complexity - O(1) - constant
@@ -194,6 +201,13 @@ public:
      * @return - the SudokuBoard formated with a first value for N, then grid values
      */
     std::string export_str() const;
+
+    /**
+     * @complexity - O(n) - worst case where n = N
+     * @return - x,y coordinates of the first empty cell found in the board
+     *           if the board is complete, {-1, -1} will be returned
+     */
+    std::pair<int, int> nextEmptyCell() const;
 
     /**
      * SudokuRow represents a row of the Matrix.
@@ -361,6 +375,20 @@ void writeInFile(std::string const &fileName, std::string const &contentFile);
 void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, int row = 0, int col = 0);
 
 /**
+ * Generate possibilities for the next empty cell of the front board to work.
+ * If the board is complete, add it to the possible solutions (it's a solution).
+ * If the board is invalid, remove it.
+ * Otherwise, generate a subproblem : each possible value in the cell will result in a new
+ *            board to process.
+ *
+ * This function permits to prepare division of the work.
+ *
+ * @param boardsToWork - list of board to check.
+ * @param solutions - list of possible boards solutions. If the board is valid, the board is added to solutions.
+ */
+void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::deque<SudokuBoard> &solutions);
+
+/**
  * Function used for tests
  */
 void tests();
@@ -370,6 +398,6 @@ void tests();
  */
 void testFromStdin();
 
-void solve();
+void initSolveMPI();
 
 #endif //INC_8INF856_PROJET_SUDOKU_H
