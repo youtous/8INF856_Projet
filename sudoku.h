@@ -87,12 +87,12 @@ public:
     std::vector<int> getCopyColumn(int col) const;
 
     /**
-    * @param cellX - cell x index
-    * @param cellY - cell y index
+    * @param cellX - block x index
+    * @param cellY - block y index
     * @complexity - O(n) where n = sudoku n^2
-    * @return - a copy of the cell
+    * @return - a copy of the block
     */
-    std::vector<int> getCopyCell(int cellX, int cellY) const;
+    std::vector<int> getCopyBlock(int cellX, int cellY) const;
 
     /**
      * @param row - index of the row to set

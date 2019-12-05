@@ -99,10 +99,10 @@ void tests() {
     std::cout << ss2.str() << std::endl;
 
     sudoku.setCell(2, 2, {7, 3, 1, 2, 8, 9, 5, 4, 6});
-    std::cout << "Affichage de la cellule (2,2):" << std::endl;
+    std::cout << "Affichage du block (2,2):" << std::endl;
     std::stringstream ss3;
-    auto vCell = sudoku.getCopyCell(2, 2);
-    for (auto const &e: vCell) {
+    auto vBlock = sudoku.getCopyBlock(2, 2);
+    for (auto const &e: vBlock) {
         ss3 << e << ",";
     }
     std::cout << ss3.str() << std::endl;
@@ -218,7 +218,7 @@ std::vector<int> SudokuBoard::getCopyColumn(int col) const {
     return copyColumn;
 }
 
-std::vector<int> SudokuBoard::getCopyCell(int cellX, int cellY) const {
+std::vector<int> SudokuBoard::getCopyBlock(int cellX, int cellY) const {
     std::vector<int> copyCell(this->n * this->n);
     int i = 0;
     for (int x = cellX * this->n; x < (cellX + 1) * this->n; ++x) {
