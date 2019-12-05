@@ -249,6 +249,7 @@ SudokuBoard createFromStdin() {
 // Begin of data access methods
 
 int const &SudokuBoard::get(int row, int col) const {
+    // todo : eventually disable
     if (row > this->rows - 1 || col > this->cols - 1) {
         std::stringstream ss;
         ss << "Trying to get [" << row << "," << col << "] on a [" << rows << "," << cols << "] matrix";
