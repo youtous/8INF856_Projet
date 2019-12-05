@@ -14,7 +14,7 @@
 /**
  * How many possibilities to generate on the first node to start ?
  */
-const int INIT_POSSIBILITIES_COUNT = 10;
+const int INIT_POSSIBILITIES_COUNT = 512;
 
 int main(int argc, char *argv[]) {
     int processId;                              /* Process rank */
@@ -55,6 +55,7 @@ void initSolveMPI() {
         }
 
         std::cout << "[" << processId << "]: generated " << boardsToCheck.size() << " boards to check." << std::endl;
+        std::cout << solutions.front() << std::endl;
     }
 }
 
@@ -170,8 +171,6 @@ void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::d
     SudokuBoard &workingBoard = boardsToWork.front();
 
     auto nextEmptyCell = workingBoard.nextEmptyCell();
-    std::cerr << "next empty cell coords; " << nextEmptyCell.first << ", " << nextEmptyCell.second << std::endl;
-
 
     // all cells have a value, we found a solution,
     // add it to the solutions list, JOB IS DONE !
