@@ -64,13 +64,34 @@ public:
      * @complexity - O(1) - constant
      * @return - size of a row
      */
-    inline int getRowSize() { return rows; }
+    inline int getRowSize() const { return rows; }
 
     /**
      * @complexity - O(1) - constant
      * @return - size of a column
      */
-    inline int getColumnSize() { return cols; }
+    inline int getColumnSize() const { return cols; }
+
+    /**
+     * @complexity - O(1) - constant
+     * @return - size of the board (number of cells)
+     */
+    inline int getSize() const { return rows * cols; }
+
+    /**
+     * @complexity - O(1) - constant
+     * @return - dimension of the Sudoku, aka N
+     */
+    inline int getSudokuDimension() const { return n; }
+
+    /**
+     * Check if a value can be set on a cell.
+     * @param row - row of the cell
+     * @param col - column of the cell
+     * @param value - value wanted
+     * @return true if the value can be set, false otherwise
+     */
+    bool testValueInCell(int row, int col, int value) const;
 
     /**
      * @param i - row index
@@ -93,6 +114,30 @@ public:
     * @return - a copy of the block
     */
     std::vector<int> getCopyBlock(int cellX, int cellY) const;
+
+    /**
+     * @param row - row of the cell
+     * @return - index of the first row of the block
+     */
+    int getBlockRowOf(int row) const;
+
+    /**
+     * @param col - column of the cell
+     * @return - index of the first col of the block
+     */
+    int getBlockColOf(int col) const;
+
+    /**
+     * @param blockRow - row of the cell
+     * @return - index of the first row of the block
+     */
+     int getStartingRowBlockOfCell(int row) const;
+
+    /**
+     * @param blockCol - column of the cell
+     * @return - index of the first column of the block
+     */
+     int getStartingColBlockOfCell(int col) const;
 
     /**
      * @param row - index of the row to set
@@ -294,6 +339,8 @@ SudokuBoard createFromStdin();
 void writeInFile(std::string const &fileName, std::string const &contentFile);
 
 
+void solveBoard(SudokuBoard const &board, int row, int col);
+
 /**
  * Function used for tests
  */
@@ -303,6 +350,7 @@ void tests();
  * Function used for tests
  */
 void testFromStdin();
+
 void solve();
 
 #endif //INC_8INF856_PROJET_SUDOKU_H

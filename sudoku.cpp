@@ -120,9 +120,82 @@ void tests() {
               << sudokuFromFile << std::endl;
 }
 
+// Begin of Solver methods
+void solveBoard(SudokuBoard &board, int row, int col) {
+    // current cell computed
+    const int index = row * board.getRowSize() + col;
+
+    // check end reached => terminate recursion
+    if (index >= board.getSize()) {
+        // the board is solved
+        // todo : add it to the stack
+        return;
+    }
+    // keep current cell value in memory
+    int savedValue = board[row][col];
+
+    // try all possible numbers in the cell
+    for (int i = 1; i <= board.getSudokuDimension(); ++i) {
+        if (board.testValueInCell(row, col, i)) {
+            int nextRow = row;
+            int nextCol = col;
+            if (col + 1 == board.getRowSize()) {
+                nextRow = std::min(row + 1, board.getColumnSize() - 1);
+                nextCol = 0;
+            } else {
+                nextCol += 1;
+            }
+
+            // compute next cell
+            solveBoard(board, nextRow, nextCol);
+            board[row][col] = savedValue;
+        }
+    }
+}
+
+bool SudokuBoard::testValueInCell(int row, int col, int value) const {
+    // same value
+    if (this->get(row, col) == value) {
+        return true;
+    }
+    // fixed value
+    if (this->get(row, col) != 0) {
+        return false;
+    }
+
+    // check in row
+    for (int i = 0; i < this->getRowSize(); ++i) {
+        if (this->get(row, i) == value) {
+            return false;
+        }
+    }
+    // check in column
+    for (int j = 0; j < this->getColumnSize(); ++j) {
+        if (this->get(j, col) == value) {
+            return false;
+        }
+    }
+    // check in block
+    const int initBlockRow = this->getStartingRowBlockOfCell(row);
+    const int initBlockCol = this->getStartingColBlockOfCell(col);
+    for (int k = 0; k < this->getSudokuDimension(); ++k) {
+        for (int p = 0; p < this->getSudokuDimension(); ++p) {
+            if (this->get(initBlockRow + k, initBlockCol + p) == value) {
+                return false;
+            }
+        }
+    }
+
+    // all tests passed!
+    return true;
+}
+
+// End of Solver methods
+
 SudokuBoard::SudokuBoard(int n) : arrAsLine(std::vector<int>(n * n * n * n)), n(n), rows(n * n), cols(n * n) {};
 
-SudokuBoard::SudokuBoard(int n, std::vector<int> &&initArr) : arrAsLine(std::move(initArr)), n(n), rows(n * n), cols(n * n) {
+SudokuBoard::SudokuBoard(int n, std::vector<int> &&initArr) : arrAsLine(std::move(initArr)), n(n), rows(n * n),
+                                                              cols(n * n) {
     double squaredNCheck = sqrt(sqrt(this->arrAsLine.size()));
     if (((double) this->n) != squaredNCheck) {
         std::stringstream errMsg;
@@ -202,6 +275,21 @@ std::vector<int> SudokuBoard::SudokuRow::vector() const {
                             parent.arrAsLine.begin() + (end >= 0 ? end : 0));
 }
 
+int SudokuBoard::getBlockRowOf(int row) const {
+    return row / this->n;
+}
+
+int SudokuBoard::getBlockColOf(int col) const {
+    return col / this->n;
+}
+
+int SudokuBoard::getStartingRowBlockOfCell(int row) const {
+    return getBlockRowOf(row) * this->n;
+}
+
+int SudokuBoard::getStartingColBlockOfCell(int col) const {
+    return getBlockColOf(col) * this->n;
+}
 // End of data access methods
 
 // Copy data access methods
