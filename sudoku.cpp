@@ -121,14 +121,15 @@ void tests() {
 }
 
 // Begin of Solver methods
-void solveBoard(SudokuBoard &board, int row, int col) {
+
+void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, int row, int col) {
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
     // check end reached => terminate recursion
     if (index >= board.getSize()) {
-        // the board is solved
-        // todo : add it to the stack
+        // the board is solved, save a copy in result vector
+        resultSolutions.emplace_back(board);
         return;
     }
     // keep current cell value in memory
@@ -137,6 +138,7 @@ void solveBoard(SudokuBoard &board, int row, int col) {
     // try all possible numbers in the cell
     for (int i = 1; i <= board.getSudokuDimension(); ++i) {
         if (board.testValueInCell(row, col, i)) {
+            // value is valid, continue in to deep search
             int nextRow = row;
             int nextCol = col;
             if (col + 1 == board.getRowSize()) {
@@ -145,9 +147,11 @@ void solveBoard(SudokuBoard &board, int row, int col) {
             } else {
                 nextCol += 1;
             }
+            // set the value
+            board[row][col] = i;
 
             // compute next cell
-            solveBoard(board, nextRow, nextCol);
+            solveBoard(board, resultSolutions, nextRow, nextCol);
             board[row][col] = savedValue;
         }
     }

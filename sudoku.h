@@ -9,6 +9,7 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
+#include <deque>
 
 /**
  * SudokuBoard class represents a grid a the sudoku game.
@@ -131,13 +132,13 @@ public:
      * @param blockRow - row of the cell
      * @return - index of the first row of the block
      */
-     int getStartingRowBlockOfCell(int row) const;
+    int getStartingRowBlockOfCell(int row) const;
 
     /**
      * @param blockCol - column of the cell
      * @return - index of the first column of the block
      */
-     int getStartingColBlockOfCell(int col) const;
+    int getStartingColBlockOfCell(int col) const;
 
     /**
      * @param row - index of the row to set
@@ -318,6 +319,14 @@ public:
 };
 
 /**
+ * SolvingQueue class keeps in a double end access queue
+ * valid solutions for a given SudokuBoard.
+ */
+class SolvingQueue : public std::deque<SudokuBoard> {
+
+};
+
+/**
  * Create a SudokuBoard from a saved instance contained in a file.
  * @param fileName - file containing SudokuBoard's data.
  * @return - SudokuBoard initiated from the File.
@@ -339,7 +348,17 @@ SudokuBoard createFromStdin();
 void writeInFile(std::string const &fileName, std::string const &contentFile);
 
 
-void solveBoard(SudokuBoard const &board, int row, int col);
+/**
+ * Solve a given SudokuBoard and store solutions in a queue.
+ * This function is recursive, it should be started using default
+ * row and col values (beginning of the board).
+ *
+ * @param board - the board to solve
+ * @param resultSolutions - a queue containing valid solutions found
+ * @param row - (optional) the row of the cell to work on
+ * @param col - (optional) the column of the cell to work on
+ */
+void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, int row = 0, int col = 0);
 
 /**
  * Function used for tests
