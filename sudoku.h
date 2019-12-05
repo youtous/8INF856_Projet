@@ -202,7 +202,7 @@ public:
         /**
          * Mama <3
          */
-        friend class Sudoku;
+        friend class SudokuBoard;
 
     public:
         /**
