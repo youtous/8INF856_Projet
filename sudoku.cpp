@@ -162,7 +162,7 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
     if (this->get(row, col) == value) {
         return true;
     }
-    // fixed value
+    // value already exists
     if (this->get(row, col) != 0) {
         return false;
     }
