@@ -41,7 +41,7 @@ void solve() {
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
-    Sudoku sudoku = createFromStdin();
+    SudokuBoard sudoku = createFromStdin();
 
     #pragma omp parallel shared(isSolved)
     {
@@ -55,7 +55,7 @@ void solve() {
 }
 
 void testFromStdin() {
-    Sudoku sudoku = createFromStdin();
+    SudokuBoard sudoku = createFromStdin();
 
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;
@@ -67,7 +67,7 @@ void tests() {
     int n2 = n * n;
     int n4 = n2 * n2;
 
-    Sudoku sudoku(n);
+    SudokuBoard sudoku(n);
     for (int x = 0; x < n; ++x) {
         for (int y = 0; y < n; ++y) {
             // work on a single cell
@@ -115,18 +115,18 @@ void tests() {
     writeInFile("grille.txt", sudoku.export_str());
 
     std::cout << "Load from file a copy of the sudoku" << std::endl;
-    Sudoku sudokuFromFile = createFromFile("grille.txt");
+    SudokuBoard sudokuFromFile = createFromFile("grille.txt");
     std::cout << "Affichage du sudoku copié :" << std::endl
               << sudokuFromFile << std::endl;
 }
 
-Sudoku::Sudoku(int n) : arrAsLine(std::vector<int>(n * n * n * n)), n(n), rows(n * n), cols(n * n) {};
+SudokuBoard::SudokuBoard(int n) : arrAsLine(std::vector<int>(n * n * n * n)), n(n), rows(n * n), cols(n * n) {};
 
-Sudoku::Sudoku(int n, std::vector<int> &&initArr) : arrAsLine(std::move(initArr)), n(n), rows(n * n), cols(n * n) {
+SudokuBoard::SudokuBoard(int n, std::vector<int> &&initArr) : arrAsLine(std::move(initArr)), n(n), rows(n * n), cols(n * n) {
     double squaredNCheck = sqrt(sqrt(this->arrAsLine.size()));
     if (((double) this->n) != squaredNCheck) {
         std::stringstream errMsg;
-        errMsg << "Size of the Sudoku is " << this->rows << "x" << this->cols <<
+        errMsg << "Size of the SudokuBoard is " << this->rows << "x" << this->cols <<
                " does not match with the square of given array : "
                << squaredNCheck;
         throw std::invalid_argument(errMsg.str());
@@ -134,7 +134,7 @@ Sudoku::Sudoku(int n, std::vector<int> &&initArr) : arrAsLine(std::move(initArr)
 
 }
 
-Sudoku createFromFile(std::string const &fileName) {
+SudokuBoard createFromFile(std::string const &fileName) {
     std::ifstream inputFile;
     inputFile.open(fileName);
 
@@ -145,7 +145,7 @@ Sudoku createFromFile(std::string const &fileName) {
     int n;
     inputFile >> n;
 
-    Sudoku sudoku(n);
+    SudokuBoard sudoku(n);
 
     int currentValue;
     for (int x = 0; x < sudoku.getColumnSize(); ++x) {
@@ -158,10 +158,10 @@ Sudoku createFromFile(std::string const &fileName) {
     return sudoku;
 }
 
-Sudoku createFromStdin() {
+SudokuBoard createFromStdin() {
     int val;
     std::cin >> val;
-    Sudoku sudoku(val);
+    SudokuBoard sudoku(val);
 
     for (int x = 0; x < sudoku.getColumnSize(); ++x) {
         for (int y = 0; y < sudoku.getRowSize(); ++y) {
@@ -175,7 +175,7 @@ Sudoku createFromStdin() {
 
 // Begin of data access methods
 
-int const &Sudoku::get(int row, int col) const {
+int const &SudokuBoard::get(int row, int col) const {
     if (row > this->rows - 1 || col > this->cols - 1) {
         std::stringstream ss;
         ss << "Trying to get [" << row << "," << col << "] on a [" << rows << "," << cols << "] matrix";
@@ -184,19 +184,19 @@ int const &Sudoku::get(int row, int col) const {
     return this->arrAsLine[this->cols * row + col];
 }
 
-int &Sudoku::get(int row, int col) {
-    return const_cast<int &>(const_cast<const Sudoku *>(this)->get(row, col));
+int &SudokuBoard::get(int row, int col) {
+    return const_cast<int &>(const_cast<const SudokuBoard *>(this)->get(row, col));
 }
 
-int const &Sudoku::SudokuRow::operator[](int col) const {
+int const &SudokuBoard::SudokuRow::operator[](int col) const {
     return parent.get(this->row, col);
 }
 
-int &Sudoku::SudokuRow::operator[](int col) {
+int &SudokuBoard::SudokuRow::operator[](int col) {
     return parent.get(this->row, col);
 }
 
-std::vector<int> Sudoku::SudokuRow::vector() const {
+std::vector<int> SudokuBoard::SudokuRow::vector() const {
     const int end = parent.getColumnSize() * (this->row + 1);
     return std::vector<int>(parent.arrAsLine.begin() + parent.getColumnSize() * this->row,
                             parent.arrAsLine.begin() + (end >= 0 ? end : 0));
@@ -206,11 +206,11 @@ std::vector<int> Sudoku::SudokuRow::vector() const {
 
 // Copy data access methods
 
-std::vector<int> Sudoku::getCopyRow(int row) const {
+std::vector<int> SudokuBoard::getCopyRow(int row) const {
     return {std::begin(this->arrAsLine) + row * this->cols, std::begin(this->arrAsLine) + (row + 1) * this->cols};
 }
 
-std::vector<int> Sudoku::getCopyColumn(int col) const {
+std::vector<int> SudokuBoard::getCopyColumn(int col) const {
     std::vector<int> copyColumn(this->rows);
     for (int i = 0; i < this->rows; ++i) {
         copyColumn[i] = this->arrAsLine[col + this->rows * i];
@@ -218,7 +218,7 @@ std::vector<int> Sudoku::getCopyColumn(int col) const {
     return copyColumn;
 }
 
-std::vector<int> Sudoku::getCopyCell(int cellX, int cellY) const {
+std::vector<int> SudokuBoard::getCopyCell(int cellX, int cellY) const {
     std::vector<int> copyCell(this->n * this->n);
     int i = 0;
     for (int x = cellX * this->n; x < (cellX + 1) * this->n; ++x) {
@@ -233,7 +233,7 @@ std::vector<int> Sudoku::getCopyCell(int cellX, int cellY) const {
 // End of copy data access methods
 
 // Begin data setters methods
-void Sudoku::setRow(int row, std::vector<int> const &rowVector) {
+void SudokuBoard::setRow(int row, std::vector<int> const &rowVector) {
     if (this->cols != rowVector.size()) {
         std::stringstream ss;
         ss << "Set row " << row << " using a vector with a different size : row size = " << this->cols
@@ -245,7 +245,7 @@ void Sudoku::setRow(int row, std::vector<int> const &rowVector) {
     }
 }
 
-void Sudoku::setColumn(int col, std::vector<int> const &columnVector) {
+void SudokuBoard::setColumn(int col, std::vector<int> const &columnVector) {
     if (this->rows != columnVector.size()) {
         std::stringstream ss;
         ss << "Set column " << col << " using a vector with a different size : column size = " << this->rows
@@ -257,7 +257,7 @@ void Sudoku::setColumn(int col, std::vector<int> const &columnVector) {
     }
 }
 
-void Sudoku::setCell(int cellX, int cellY, std::vector<int> const &cellVector) {
+void SudokuBoard::setCell(int cellX, int cellY, std::vector<int> const &cellVector) {
     if ((this->n * this->n) != cellVector.size()) {
         std::stringstream ss;
         ss << "Set cell (" << cellX << "," << cellY << ") using a vector with a different size : cell size = "
@@ -276,7 +276,7 @@ void Sudoku::setCell(int cellX, int cellY, std::vector<int> const &cellVector) {
 
 // Begin format methods
 
-std::ostream &Sudoku::to_ostream(std::ostream &os) const {
+std::ostream &SudokuBoard::to_ostream(std::ostream &os) const {
     std::stringstream ss;
     int digits = (floor(log10(this->n * this->n)) + 1) + 1;
 
@@ -303,7 +303,7 @@ std::ostream &Sudoku::to_ostream(std::ostream &os) const {
     return os << ss.str();
 }
 
-std::ostream &Sudoku::SudokuRow::to_ostream(std::ostream &os) const {
+std::ostream &SudokuBoard::SudokuRow::to_ostream(std::ostream &os) const {
     std::stringstream ss;
 
     // get the number of digits in a row using the max value which can fit in a cell
@@ -318,7 +318,7 @@ std::ostream &Sudoku::SudokuRow::to_ostream(std::ostream &os) const {
 }
 
 
-std::string Sudoku::export_str() const {
+std::string SudokuBoard::export_str() const {
     std::stringstream exportStr;
     exportStr << n;
 

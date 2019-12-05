@@ -12,13 +12,17 @@
 - `make help` :              show help
 
 ## References:
-- Sudoku illustrated example with Constraints : https://pdfs.semanticscholar.org/1055/9030f571f05d18831edead72281d48f78752.pdf
-- Sudoku illstrated with Deep First : https://github.com/Shivanshu-Gupta/Parallel-Sudoku-Solver
-- Paper with deeper Sudoku exploration : https://shawnjzlee.me/dl/efficient-parallel-sudoku.pdf
-- Sudoku deeper presentation : https://individual.utoronto.ca/rafatrashid/Projects/2012/SudokuPresentation.pptx
+- SudokuBoard illustrated example with Constraints : https://pdfs.semanticscholar.org/1055/9030f571f05d18831edead72281d48f78752.pdf
+- SudokuBoard illstrated with Deep First : https://github.com/Shivanshu-Gupta/Parallel-SudokuBoard-Solver
+- Paper with deeper SudokuBoard exploration : https://shawnjzlee.me/dl/efficient-parallel-sudoku.pdf
+- SudokuBoard deeper presentation : https://individual.utoronto.ca/rafatrashid/Projects/2012/SudokuPresentation.pptx
 - How to generate a grid : https://stackoverflow.com/questions/4066075/proper-data-structure-to-represent-a-sudoku-puzzle
 
 - Humanistic vs Bruteforce solver ; https://www.andrew.cmu.edu/user/astian/
+- Bruteforce implementation : https://github.com/hecrj/par/blob/master/lab4/sudoku.c
+
+todo : check this https://github.com/pranjalmaheshwari/sudokuSolver/blob/master/sudoku.c, 
+todo : https://github.com/bryanesmith/SudokuBoard-solver/blob/master/SudokuPuzzle.cpp#L164
 
 ========================
 - Best essay about sudoku solving problem : http://norvig.com/sudoku.html

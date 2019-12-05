@@ -11,36 +11,36 @@
 #include <stdexcept>
 
 /**
- * Sudoku class represents a grid a the sudoku game.
+ * SudokuBoard class represents a grid a the sudoku game.
  */
-class Sudoku {
+class SudokuBoard {
 private:
     /**
      * Values of the grid are stored in row order.
      */
     std::vector<int> arrAsLine;
     /**
-     * N is the complexity of the Sudoku. A sudoku grid contains n^2 cells,
+     * N is the complexity of the SudokuBoard. A sudoku grid contains n^2 cells,
      * each cell contains n^2 values.
      */
     int n;
     /**
-     * Count how many rows and columns the Sudoku is made of.
+     * Count how many rows and columns the SudokuBoard is made of.
      */
     int rows, cols;
 public:
     /**
-     * Sudoku constructor.
-     * @param n - size of the Sudoku
+     * SudokuBoard constructor.
+     * @param n - size of the SudokuBoard
      * @param initArr - an initial array containing sudoku's grid values.
      */
-    Sudoku(int n, std::vector<int> &&initArr);
+    SudokuBoard(int n, std::vector<int> &&initArr);
 
     /**
-     * Sudoku constructor.
-     * @param n - size of the Sudoku
+     * SudokuBoard constructor.
+     * @param n - size of the SudokuBoard
      */
-    Sudoku(int n);
+    SudokuBoard(int n);
 
     /**
      * @param i - row index
@@ -136,16 +136,16 @@ public:
 
     /**
      * @param os - stream used for output
-     * @return - a stream containing the Sudoku in CLI
+     * @return - a stream containing the SudokuBoard in CLI
      */
     std::ostream &to_ostream(std::ostream &os) const;
 
-    friend std::ostream &operator<<(std::ostream &os, const Sudoku &sudoku) {
+    friend std::ostream &operator<<(std::ostream &os, const SudokuBoard &sudoku) {
         return sudoku.to_ostream(os);
     }
 
     /**
-     * @return - the Sudoku formated with a first value for N, then grid values
+     * @return - the SudokuBoard formated with a first value for N, then grid values
      */
     std::string export_str() const;
 
@@ -213,28 +213,28 @@ public:
         /**
          * SudokuRow constructor.
          * @param parent_  - parent of this row
-         * @param row_ - row index in the Sudoku grid
+         * @param row_ - row index in the SudokuBoard grid
          */
-        SudokuRow(Sudoku &parent_, int row_) :
+        SudokuRow(SudokuBoard &parent_, int row_) :
                 parent(parent_),
                 row(row_) {}
 
         /**
          * SudokuRow constructor.
          * @param parent_  - parent of this row
-         * @param row_ - row index in the Sudoku grid
+         * @param row_ - row index in the SudokuBoard grid
          */
-        SudokuRow(Sudoku const &parent_, int row_) :
-                parent(const_cast<Sudoku &>(parent_)),
+        SudokuRow(SudokuBoard const &parent_, int row_) :
+                parent(const_cast<SudokuBoard &>(parent_)),
                 row(row_) {}
 
         /**
          * Parent of this Row.
          */
-        Sudoku &parent;
+        SudokuBoard &parent;
 
         /**
-         * Row index in the Sudoku grid.
+         * Row index in the SudokuBoard grid.
          */
         int row;
     };
@@ -273,18 +273,18 @@ public:
 };
 
 /**
- * Create a Sudoku from a saved instance contained in a file.
- * @param fileName - file containing Sudoku's data.
- * @return - Sudoku initiated from the File.
+ * Create a SudokuBoard from a saved instance contained in a file.
+ * @param fileName - file containing SudokuBoard's data.
+ * @return - SudokuBoard initiated from the File.
  */
-Sudoku createFromFile(std::string const &fileName);
+SudokuBoard createFromFile(std::string const &fileName);
 
 /**
- * Create a Sudoku from an stdin, the first element contains
- * the size of the Sudoku.
- * @return - Sudoku initiated from the File.
+ * Create a SudokuBoard from an stdin, the first element contains
+ * the size of the SudokuBoard.
+ * @return - SudokuBoard initiated from the File.
  */
-Sudoku createFromStdin();
+SudokuBoard createFromStdin();
 
 /**
  * Write in a File a given content.
