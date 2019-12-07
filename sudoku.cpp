@@ -389,7 +389,7 @@ SudokuBoard createFromStdin() {
 
 int const &SudokuBoard::get(int row, int col) const {
     // todo : eventually disable
-    if (row > this->rows - 1 || col > this->cols - 1) {
+    if (row > this->rows - 1 || row < 0 || col > this->cols - 1 || col < 0) {
         std::stringstream ss;
         ss << "Trying to get [" << row << "," << col << "] on a [" << rows << "," << cols << "] matrix";
         throw std::out_of_range(ss.str());
