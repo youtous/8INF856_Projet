@@ -440,6 +440,14 @@ void sendSudokuBoard(SudokuBoard &board, int dest, int tag, MPI_Comm pCommunicat
 SudokuBoard receiveSudokuBoard(int src, int tag, MPI_Comm pCommunicator);
 
 /**
+ * Use the master process as a load balancer between processes.
+ * Each worker process will receive SudokuBoard to process on it side.
+ * At the end, send back all results to master process.
+ */
+void initSolveMPI();
+
+
+/**
  * Function used for tests
  */
 void tests();
@@ -448,7 +456,5 @@ void tests();
  * Function used for tests
  */
 void testFromStdin();
-
-void initSolveMPI();
 
 #endif //INC_8INF856_PROJET_SUDOKU_H

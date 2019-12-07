@@ -143,72 +143,6 @@ void initSolveMPI() {
     }
 }
 
-void testFromStdin() {
-    SudokuBoard sudoku = createFromStdin();
-
-    std::cout << "Affichage du sudoku :" << std::endl
-              << sudoku << std::endl;
-
-}
-
-void tests() {
-    int n = 3;
-    int n2 = n * n;
-    int n4 = n2 * n2;
-
-    SudokuBoard sudoku(n);
-    for (int x = 0; x < n; ++x) {
-        for (int y = 0; y < n; ++y) {
-            // work on a single cell
-            int start = 1;
-            for (int i = 0; i < n; ++i) {
-                for (int j = 0; j < n; ++j) {
-                    sudoku[x * n + i][y * n + j] = start++;
-                }
-            }
-        }
-    }
-
-    sudoku.setRow(2, {4, 3, 1, 2, 8, 9, 5, 6, 7});
-    std::cout << "Affichage de la 3eme ligne :" << std::endl;
-    std::stringstream ss;
-    auto v = sudoku.getCopyRow(2);
-    for (auto const &e: v) {
-        ss << e << ",";
-    }
-    std::cout << ss.str() << std::endl;
-
-    sudoku.setColumn(2, {6, 3, 1, 2, 8, 9, 5, 4, 7});
-    std::cout << "Affichage de la 3eme colonnee :" << std::endl;
-    std::stringstream ss2;
-    auto vCol = sudoku.getCopyColumn(2);
-    for (auto const &e: vCol) {
-        ss2 << e << ",";
-    }
-    std::cout << ss2.str() << std::endl;
-
-    sudoku.setCell(2, 2, {7, 3, 1, 2, 8, 9, 5, 4, 6});
-    std::cout << "Affichage du block (2,2):" << std::endl;
-    std::stringstream ss3;
-    auto vBlock = sudoku.getCopyBlock(2, 2);
-    for (auto const &e: vBlock) {
-        ss3 << e << ",";
-    }
-    std::cout << ss3.str() << std::endl;
-
-
-    std::cout << "Affichage du sudoku :" << std::endl
-              << sudoku << std::endl;
-
-    std::cout << "Write in grille.txt" << std::endl;
-    writeInFile("grille.txt", sudoku.export_str());
-
-    std::cout << "Load from file a copy of the sudoku" << std::endl;
-    SudokuBoard sudokuFromFile = createFromFile("grille.txt");
-    std::cout << "Affichage du sudoku copié :" << std::endl
-              << sudokuFromFile << std::endl;
-}
-
 // Begin of Solver methods
 
 void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, int row, int col) {
@@ -634,4 +568,72 @@ SudokuBoard receiveSudokuBoard(int src, int tag, MPI_Comm pCommunicator) {
 }
 // End of MPI exchanges methods
 
+
+// Begin of test methods
+void testFromStdin() {
+    SudokuBoard sudoku = createFromStdin();
+
+    std::cout << "Affichage du sudoku :" << std::endl
+              << sudoku << std::endl;
+
+}
+
+void tests() {
+    int n = 3;
+    int n2 = n * n;
+    int n4 = n2 * n2;
+
+    SudokuBoard sudoku(n);
+    for (int x = 0; x < n; ++x) {
+        for (int y = 0; y < n; ++y) {
+            // work on a single cell
+            int start = 1;
+            for (int i = 0; i < n; ++i) {
+                for (int j = 0; j < n; ++j) {
+                    sudoku[x * n + i][y * n + j] = start++;
+                }
+            }
+        }
+    }
+
+    sudoku.setRow(2, {4, 3, 1, 2, 8, 9, 5, 6, 7});
+    std::cout << "Affichage de la 3eme ligne :" << std::endl;
+    std::stringstream ss;
+    auto v = sudoku.getCopyRow(2);
+    for (auto const &e: v) {
+        ss << e << ",";
+    }
+    std::cout << ss.str() << std::endl;
+
+    sudoku.setColumn(2, {6, 3, 1, 2, 8, 9, 5, 4, 7});
+    std::cout << "Affichage de la 3eme colonnee :" << std::endl;
+    std::stringstream ss2;
+    auto vCol = sudoku.getCopyColumn(2);
+    for (auto const &e: vCol) {
+        ss2 << e << ",";
+    }
+    std::cout << ss2.str() << std::endl;
+
+    sudoku.setCell(2, 2, {7, 3, 1, 2, 8, 9, 5, 4, 6});
+    std::cout << "Affichage du block (2,2):" << std::endl;
+    std::stringstream ss3;
+    auto vBlock = sudoku.getCopyBlock(2, 2);
+    for (auto const &e: vBlock) {
+        ss3 << e << ",";
+    }
+    std::cout << ss3.str() << std::endl;
+
+
+    std::cout << "Affichage du sudoku :" << std::endl
+              << sudoku << std::endl;
+
+    std::cout << "Write in grille.txt" << std::endl;
+    writeInFile("grille.txt", sudoku.export_str());
+
+    std::cout << "Load from file a copy of the sudoku" << std::endl;
+    SudokuBoard sudokuFromFile = createFromFile("grille.txt");
+    std::cout << "Affichage du sudoku copié :" << std::endl
+              << sudokuFromFile << std::endl;
+}
+// End of test methods
 
