@@ -462,10 +462,10 @@ std::vector<int> SudokuBoard::SudokuRow::vector() const {
 }
 
 std::pair<int, int> SudokuBoard::nextEmptyCell() const {
-    for (int i = 0; i < this->getColumnSize(); ++i) {
-        for (int j = 0; j < this->getRowSize(); ++j) {
-            if (this->get(i, j) == 0) {
-                return {i, j};
+    for (int row = 0; row < this->getColumnSize(); row++) {
+        for (int col = 0; col < this->getRowSize(); col++) {
+            if (this->get(row, col) == 0) {
+                return {row, col};
             }
         }
     }
