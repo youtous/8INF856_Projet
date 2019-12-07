@@ -12,6 +12,9 @@
 #include <deque>
 #include <utility>
 
+#define CUSTOM_MPI_SOLUTIONS_TAG            10
+
+
 /**
  * SudokuBoard class represents a grid a the sudoku game.
  */
@@ -186,6 +189,13 @@ public:
      * @return - value at given coordinates
      */
     int &get(int row, int col);
+
+    /**
+     * @return - board as raw pointer to data
+     */
+    int *data() {
+        return this->arrAsLine.data();
+    }
 
     /**
      * @param os - stream used for output
@@ -387,6 +397,44 @@ void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, in
  * @param solutions - list of possible boards solutions. If the board is valid, the board is added to solutions.
  */
 void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::deque<SudokuBoard> &solutions);
+
+/**
+ * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.
+ * @param dequeue - the receiving queue
+ * @param src - from
+ * @param tag - MPI_TAG
+ * @param comm - MPI_COM
+ */
+void receivePushBackDeque(std::deque<SudokuBoard> &dequeue, int src, int tag, MPI_Comm comm);
+
+/**
+ * Send a std::deque<int> using MPI. The queue will be consumed!
+ *
+ * @param dequeue - the receiving queue
+ * @param dest - to
+ * @param tag - MPI_TAG
+ * @param comm - MPI_COMM
+ */
+void sendAndConsumeDeque(std::deque<SudokuBoard> &deque, int dest, int tag, MPI_Comm comm);
+
+/**
+ * Send a SudokuBoard using MPI.
+ *
+ * @param board - the board
+ * @param dest - the destination process
+ * @param tag - MPI_TAG
+ * @param pCommunicator - MPI_COMM
+ */
+void sendSudokuBoard(SudokuBoard &board, int dest, int tag, MPI_Comm pCommunicator);
+
+/**
+ * Receive a SudokuBoard using MPI.
+ *
+ * @param src - source process
+ * @param tag - MPI_TAG
+ * @param pCommunicator -  MPI_COMM
+ */
+SudokuBoard receiveSudokuBoard(int src, int tag, MPI_Comm pCommunicator);
 
 /**
  * Function used for tests
