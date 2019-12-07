@@ -122,8 +122,11 @@ void initSolveMPI() {
             if (countReceivedBoards > 0) {
                 solveProblemsOnNode(problemBoards, solutionBoards);
                 processLoad += countReceivedBoards;
+            } else {
+                // end of the work
+                break;
             }
-        } while (!problemBoards.empty());
+        } while (true);
 
         std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size() << " solutions found over "
                   << processLoad << " problem boards assigned." << std::endl;
