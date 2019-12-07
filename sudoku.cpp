@@ -162,27 +162,20 @@ void solveBoard(SudokuBoard board, std::deque<SudokuBoard> &resultSolutions, int
         resultSolutions.emplace_back(board);
         return;
     }
-    // keep current cell value in memory
-    int savedValue = board[row][col];
 
     // try all possible numbers in the cell
     for (int i = 1; i <= board.getBlockSize(); ++i) {
         if (board.testValueInCell(row, col, i)) {
             // value is valid, continue in to deep search
-            int nextRow = row;
-            int nextCol = col;
-            if (col + 1 == board.getRowSize()) {
-                nextRow = std::min(row + 1, board.getColumnSize() - 1);
-                nextCol = 0;
-            } else {
-                nextCol += 1;
-            }
+            bool jumpRow = (col + 1) >= board.getRowSize();
+            int nextRow = row + (jumpRow ? 1 : 0);
+            int nextCol = jumpRow ? 0 : col + 1;
+
             // set the value
             board[row][col] = i;
 
             // compute next cell
             solveBoard(board, resultSolutions, nextRow, nextCol);
-            board[row][col] = savedValue;
         }
     }
 }
