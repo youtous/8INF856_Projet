@@ -312,21 +312,27 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     SudokuBoard solutionFound(0);
 #pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutionFound)
     for (int i = 0; i < countProblems; i++) {
-        if (!subProblems[i].empty()) {
-            SudokuBoard solution = solveBoard(subProblems[i].front());
-            subProblems[i].pop_front();
+        SudokuBoard solution = solveBoard(subProblems[i].front());
+        subProblems[i].pop_front();
 
-            /* std::cout << "[" << processId << "]: solved a board (" << subProblems[i].size()
-          << " left) on problem {" << i << "} over " << omp_get_num_threads()
-          << " threads." << std::endl; */
+        /* std::cout << "[" << processId << "]: solved a board (" << subProblems[i].size()
+      << " left) on problem {" << i << "} over " << omp_get_num_threads()
+      << " threads." << std::endl; */
 
-            if (!solution.isEmpty()) {
+        if (!solution.isEmpty()) {
 #pragma omp critical
-                solutionFound = solution;
+            solutionFound = solution;
 #pragma omp cancel for
-            }
         }
+
 #pragma omp cancellation point for
+    }
+
+    if (!solutionFound.isEmpty()) {
+        std::cerr << "Solution found after loop !" << std::endl << solutionFound <<
+                  std::endl;
+        exit(1);
+        return solutionFound;
     }
 
     // no solution found
