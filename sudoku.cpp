@@ -192,7 +192,7 @@ void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::d
     // all cells have a value, we found a solution,
     // add it to the solutions list, JOB IS DONE !
     if (nextEmptyCell.first == -1) {
-        solutions.push_back(boardsToWork.front());
+        solutions.push_back(std::move(boardsToWork.front()));
         boardsToWork.pop_front();
         return;
     }
