@@ -406,8 +406,9 @@ void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::d
  * @param src - from
  * @param tag - MPI_TAG
  * @param comm - MPI_COM
+ * @return - how many boards has been added to the dequeues
  */
-void receivePushBackDeque(std::deque<SudokuBoard> &dequeue, int src, int tag, MPI_Comm comm);
+int receivePushBackDeque(std::deque<SudokuBoard> &dequeue, int src, int tag, MPI_Comm comm);
 
 /**
  * Send a std::deque<int> using MPI. The queue will be consumed!
