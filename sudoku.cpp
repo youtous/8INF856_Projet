@@ -80,6 +80,7 @@ void initSolveMPI() {
 
     // balance load dynamically between processes
     if (processId == 0) {
+        MPI_Status idleRequestStatus;
         // master process opens idle requests from workers
         std::vector<MPI_Request> workersRequests(countProcess - 1);
         std::vector<int> countSolutionsFoundOnProcess(countProcess - 1);
@@ -90,7 +91,6 @@ void initSolveMPI() {
 
         // distribute work, iterate over each process worker until no work left
         int idleResponse;
-        MPI_Status idleRequestStatus;
         const int initialProblemsSize = problemBoards.size();
         while (!problemBoards.empty()) {
             for (int workerId = 1; workerId < countProcess; ++workerId) {
@@ -135,10 +135,10 @@ void initSolveMPI() {
     } else {
         unsigned int processLoad = 0;
         // workers wait for work to do while the working queue is not empty
+        MPI_Request workerRequestIdle;
+        MPI_Status idleRequestStatus;
         do {
             // notice master process is idle
-            MPI_Request workerRequestIdle;
-            MPI_Status idleRequestStatus;
             // send to master the number of solutions founds
             int countSolutions = solutionBoards.size();
             MPI_Isend(&countSolutions, 1, MPI_INT, 0, CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD, &workerRequestIdle);
