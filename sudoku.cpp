@@ -53,6 +53,9 @@ void initSolveMPI() {
     if (processId == 0) {
         SudokuBoard sudoku = createFromStdin();
 
+
+        std::cout << "[" << processId << "]: SudokuBoard to solve : " << std::endl << sudoku << std::endl;
+
         // generate the first sub-problems in order to dispatch work between nodes
         problemBoards.emplace_front(sudoku);
         while (!problemBoards.empty() && problemBoards.size() < COUNT_PROBLEMS_TO_GENERATE_ON_MASTER) {
