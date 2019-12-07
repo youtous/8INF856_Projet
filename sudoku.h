@@ -98,6 +98,11 @@ public:
     inline int getSudokuDimension() const { return n; }
 
     /**
+     * @return - true if the board is empty
+     */
+    inline bool isEmpty() const { return n == 0; }
+
+    /**
      * Check if a value can be set on a cell.
      * @param row - row of the cell
      * @param col - column of the cell
@@ -367,20 +372,20 @@ void writeInFile(std::string const &fileName, std::string const &contentFile);
 
 
 /**
- * Solve a given SudokuBoard and store solutions in a queue.
+ * Solve a given SudokuBoard.
  * This function is recursive, it should be started using default
  * row and col values (beginning of the board).
  *
  * @param board - the board to solve
- * @param resultSolutions - a queue containing valid solutions found
  * @param row - (optional) the row of the cell to work on
  * @param col - (optional) the column of the cell to work on
+ * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
-void solveBoard(SudokuBoard board, std::deque<SudokuBoard> &resultSolutions, int row = 0, int col = 0);
+SudokuBoard solveBoard(SudokuBoard board, int row = 0, int col = 0);
 
 /**
  * Generate possibilities for the next empty cell of the front board to work.
- * If the board is complete, add it to the possible solutions (it's a solution).
+ * If the board is complete, return the solution.
  * If the board is invalid, remove it.
  * Otherwise, generate a subproblem : each possible value in the cell will result in a new
  *            board to process.
@@ -389,10 +394,11 @@ void solveBoard(SudokuBoard board, std::deque<SudokuBoard> &resultSolutions, int
  *
  * @param boardsToWork - list of board to check.
  * @param solutions - list of possible boards solutions. If the board is valid, the board is added to solutions.
+ * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
-void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::deque<SudokuBoard> &solutions);
+SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork);
 
-void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoard> &solutions);
+SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems);
 
 /**
  * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.

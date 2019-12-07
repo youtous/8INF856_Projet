@@ -60,7 +60,19 @@ void initSolveMPI() {
         // generate the first sub-problems in order to dispatch work between nodes
         problemBoards.emplace_front(sudoku);
         while (!problemBoards.empty() && problemBoards.size() < COUNT_PROBLEMS_TO_GENERATE_ON_MASTER) {
-            generatePossibilitiesNextCell(problemBoards, solutionBoards);
+            SudokuBoard solution = generatePossibilitiesNextCell(problemBoards);
+
+            if (!solution.isEmpty()) {
+                // solution found, end of generation
+                solutionBoards.emplace_back(solution);
+                break;
+            }
+        }
+
+        if (!solutionBoards.empty()) {
+            std::cout << "[" << processId << "]: a solution has been found :" << std::endl << solutionBoards.front()
+                      << std::endl;
+            return;
         }
 
         std::cout << "[" << processId << "]: generated " << problemBoards.size() << " initial problem boards to check."
@@ -73,8 +85,7 @@ void initSolveMPI() {
         std::vector<MPI_Request> workersRequests(countProcess - 1);
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             MPI_Irecv(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_IDLE_TAG,
-                      MPI_COMM_WORLD,
-                      (workersRequests.data() + workerId - 1));
+                      MPI_COMM_WORLD, (workersRequests.data() + workerId - 1));
         }
 
         // distribute work, iterate over each process worker until no work left
@@ -100,7 +111,7 @@ void initSolveMPI() {
         std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
 
         // liberate workers from awaiting work loop
-        int responseWorkerId ;
+        int responseWorkerId;
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             // wait any idle response and indicate end of work to the worker
             MPI_Waitany(countProcess - 1, workersRequests.data(), &responseWorkerId, &idleRequestStatus);
@@ -121,7 +132,13 @@ void initSolveMPI() {
                                                            MPI_COMM_WORLD);
 
             if (countReceivedBoards > 0) {
-                solveProblemsOnNode(problemBoards, solutionBoards);
+                SudokuBoard solution = solveProblemsOnNode(problemBoards);
+                if (!solution.isEmpty()) {
+                    // todo : return it to master
+                    std::cout << "[" << processId << "]: a solution has been found :" << std::endl
+                              << solution << std::endl;
+                    exit(1);
+                }
                 processLoad += countReceivedBoards;
             } else {
                 // end of the work
@@ -156,15 +173,14 @@ void initSolveMPI() {
 
 // Begin of Solver methods
 
-void solveBoard(SudokuBoard board, std::deque<SudokuBoard> &resultSolutions, int row, int col) {
+SudokuBoard solveBoard(SudokuBoard board, int row, int col) {
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
     // check end reached => terminate recursion
     if (index >= board.getSize()) {
-        // the board is solved, save a copy in result vector
-        resultSolutions.emplace_back(board);
-        return;
+        // the board is solved, return it
+        return board;
     }
 
     // try all possible numbers in the cell
@@ -179,12 +195,17 @@ void solveBoard(SudokuBoard board, std::deque<SudokuBoard> &resultSolutions, int
             board[row][col] = i;
 
             // compute next cell
-            solveBoard(board, resultSolutions, nextRow, nextCol);
+            SudokuBoard solution = solveBoard(board, nextRow, nextCol);
+            // if solution has been found, return recursion
+            if (!solution.isEmpty()) {
+                return solution;
+            }
         }
     }
+    return SudokuBoard(0);
 }
 
-void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::deque<SudokuBoard> &solutions) {
+SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork) {
     if (boardsToWork.empty()) {
         // no solution remaining
         throw std::invalid_argument("Given boards to compute is empty, no reduction can be done.");
@@ -197,9 +218,9 @@ void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::d
     // all cells have a value, we found a solution,
     // add it to the solutions list, JOB IS DONE !
     if (nextEmptyCell.first == -1) {
-        solutions.emplace_back(boardsToWork.front());
+        SudokuBoard solution = boardsToWork.front();
         boardsToWork.pop_front();
-        return;
+        return solution;
     }
 
     // possibles values for the cell
@@ -217,26 +238,27 @@ void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::d
     if (possibleValuesInCell.empty()) {
         // no solution for this board, next!
         boardsToWork.pop_front();
-        return;
+        return SudokuBoard(0);
     }
 
     // create a new board to check for each possible value
     // and add it to the work queue
     for (auto const &value: possibleValuesInCell) {
         workingBoard[nextEmptyCell.first][nextEmptyCell.second] = value;
-        if (possibleValuesInCell.size() > 1) {
-            boardsToWork.emplace_back(workingBoard);
-        } else {
-            // save copy of a board pushing current board modified with the
-            // last value at the end of the working queue
-            boardsToWork.emplace_back(boardsToWork.front());
+        boardsToWork.emplace_back(workingBoard);
+        possibleValuesInCell.pop_front();
+
+        if (possibleValuesInCell.empty()) {
+            // move to next board
+            // std::cerr << "moving to next board !" << std::endl;
             boardsToWork.pop_front();
         }
-        possibleValuesInCell.pop_front();
     }
+
+    return SudokuBoard(0);
 }
 
-void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoard> &solutions) {
+SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     int processId;                              /* Process rank */
     int countProcess;                           /* Number of processes */
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
@@ -244,17 +266,21 @@ void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoa
 
     // generate sub-problems in order to dispatch work between threads
     while (!problems.empty() && problems.size() < COUNT_PROBLEMS_TO_GENERATE_ON_WORKER) {
-        generatePossibilitiesNextCell(problems, solutions);
+        SudokuBoard solution = generatePossibilitiesNextCell(problems);
+
+        if (!solution.isEmpty()) {
+            // solution found during generation
+            return solution;
+        }
     }
 
     std::cout << "[" << processId << "]: generated " << problems.size() << " problem boards to check." << std::endl;
 
-    int countProblems = problems.size();
 
     // for each problem, associate a dequeue of sultions
-    std::vector<std::deque<SudokuBoard> > solutionsPerProblem(problems.size());
+    std::vector<std::deque<SudokuBoard> > subProblems(problems.size());
     // split the problems in sub-problems in previous vector
-    for (auto &dequeueProblem: solutionsPerProblem) {
+    for (auto &dequeueProblem: subProblems) {
         dequeueProblem.emplace_back(std::move(problems.front()));
         problems.pop_front();
     }
@@ -268,26 +294,29 @@ void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoa
      * overhead then the static scheduling type because it dynamically distributes the iterations during the runtime.
      */
     // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
-#pragma omp parallel for  schedule(dynamic)  shared(countProblems, solutionsPerProblem)
+    int countProblems = subProblems.size();
+    SudokuBoard solutionFound(0);
+#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutionFound)
     for (int i = 0; i < countProblems; i++) {
-        if (!solutionsPerProblem[i].empty()) {
-            solveBoard(solutionsPerProblem[i].front(), solutionsPerProblem[i]);
-            /* std::cout << "[" << processId << "]: solved a board (" << solutionsPerProblem[i].size()
-                      << " left) on problem {" << i << "} over " << omp_get_num_threads()
-                      << " threads." << std::endl; */
-            solutionsPerProblem[i].pop_front();
+        if (!subProblems[i].empty()) {
+            SudokuBoard solution = solveBoard(subProblems[i].front());
+            subProblems[i].pop_front();
+
+            /* std::cout << "[" << processId << "]: solved a board (" << subProblems[i].size()
+          << " left) on problem {" << i << "} over " << omp_get_num_threads()
+          << " threads." << std::endl; */
+
+            if (!solution.isEmpty()) {
+#pragma omp critical
+                solutionFound = solution;
+#pragma omp cancel for
+            }
         }
+#pragma omp cancellation point for
     }
 
-    // reduce computed solutions and add it to process solutions
-    int countNewSolutions = 0;
-    for (auto &splitedSolutions : solutionsPerProblem) {
-        for (auto &solution :splitedSolutions) {
-            solutions.emplace_back(std::move(solution));
-            countNewSolutions += 1;
-        }
-    }
-    std::cout << "[" << processId << "]: found " << countNewSolutions << " new solutions." << std::endl;
+    // no solution found
+    return solutionFound;
 }
 
 bool SudokuBoard::testValueInCell(int row, int col, int value) const {
