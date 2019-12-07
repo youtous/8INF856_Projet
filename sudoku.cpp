@@ -138,11 +138,11 @@ void initSolveMPI() {
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             int countReceivedSolutions = receivePushBackDeque(solutionBoards, workerId, CUSTOM_MPI_SOLUTIONS_TAG,
                                                               MPI_COMM_WORLD);
-            std::cout << "[" << processId << "]: " << countReceivedSolutions << "solutions from process [ " << workerId
+            std::cout << "[" << processId << "]: " << countReceivedSolutions << " solutions from process [" << workerId
                       << "] have been collected."
                       << std::endl;
         }
-        std::cout << "[" << processId << "]: all results collected : " << solutionBoards.size() << "solutions found!"
+        std::cout << "[" << processId << "]: all results collected : " << solutionBoards.size() << ", solutions found!"
                   << std::endl;
     } else {
         // send results to master
