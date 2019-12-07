@@ -14,11 +14,11 @@
 /**
  * How many sub-problems to generate on the master node ?
  */
-const int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 256;
+const int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 512;
 /**
   * How many sub-problems to generate on the worker node when receiving work ?
  */
-const int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 256;
+const int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
 
 int main(int argc, char *argv[]) {
     int processId;                              /* Process rank */
