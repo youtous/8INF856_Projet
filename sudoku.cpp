@@ -59,7 +59,7 @@ void initSolveMPI() {
             generatePossibilitiesNextCell(problemBoards, solutionBoards);
         }
 
-        std::cout << "[" << processId << "]: generated " << problemBoards.size() << " problem boards to check."
+        std::cout << "[" << processId << "]: generated " << problemBoards.size() << " initial problem boards to check."
                   << std::endl;
     }
 
@@ -80,7 +80,7 @@ void initSolveMPI() {
             for (int workerId = 1; workerId < countProcess; ++workerId) {
                 idleResponse = 0;
                 // check if the request has been completed
-                MPI_Test((workersRequests.data() + workerId + 1), &idleResponse, &idleRequestStatus);
+                MPI_Test((workersRequests.data() + workerId - 1), &idleResponse, &idleRequestStatus);
 
                 // worker is idle ! send it some work
                 if (idleResponse) {
@@ -88,7 +88,7 @@ void initSolveMPI() {
                               << std::endl;
                     sendAndConsumeDeque(problemBoards, workerId, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 1);
                     MPI_Irecv(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
-                              (workersRequests.data() + workerId + 1));
+                              (workersRequests.data() + workerId - 1));
                 }
             }
         }
@@ -257,7 +257,7 @@ void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoa
     // problems is now empty
 
     // solve problem boards using parallel
-    #pragma omp parallel for \
+#pragma omp parallel for \
                 schedule(dynamic) \
                 shared(countProblems, problems)
     for (int i = 0; i < countProblems; i++) {
