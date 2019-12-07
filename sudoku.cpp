@@ -53,7 +53,8 @@ void initSolveMPI() {
     if (processId == 0) {
         SudokuBoard sudoku = createFromStdin();
 
-
+// todo : stop early when one solution is found
+// todo : make deep search more efficient
         std::cout << "[" << processId << "]: SudokuBoard to solve : " << std::endl << sudoku << std::endl;
 
         // generate the first sub-problems in order to dispatch work between nodes
