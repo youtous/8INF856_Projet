@@ -199,7 +199,7 @@ void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::d
     // all cells have a value, we found a solution,
     // add it to the solutions list, JOB IS DONE !
     if (nextEmptyCell.first == -1) {
-        solutions.push_back(std::move(boardsToWork.front()));
+        solutions.emplace_back(boardsToWork.front());
         boardsToWork.pop_front();
         return;
     }
@@ -257,7 +257,7 @@ void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoa
     std::vector<std::deque<SudokuBoard> > solutionsPerProblem(problems.size());
     // split the problems in sub-problems in previous vector
     for (auto &dequeueProblem: solutionsPerProblem) {
-        dequeueProblem.push_back(std::move(problems.front()));
+        dequeueProblem.emplace_back(std::move(problems.front()));
         problems.pop_front();
     }
     // problems is now empty
@@ -285,7 +285,7 @@ void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoa
     int countNewSolutions = 0;
     for (auto &splitedSolutions : solutionsPerProblem) {
         for (auto &solution :splitedSolutions) {
-            solutions.push_back(std::move(solution));
+            solutions.emplace_back(std::move(solution));
             countNewSolutions += 1;
         }
     }
