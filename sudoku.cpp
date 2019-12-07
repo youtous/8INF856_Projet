@@ -256,23 +256,34 @@ void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoa
     }
     // problems is now empty
 
-    // solve problem boards using parallel
-#pragma omp parallel for \
-                schedule(dynamic) \
-                shared(countProblems, problems)
+    omp_set_num_threads(8);
+
+    /*
+     * The dynamic scheduling type is appropriate when the iterations require different computational costs.
+     * This means that the iterations are poorly balanced between each other. The dynamic scheduling type has higher
+     * overhead then the static scheduling type because it dynamically distributes the iterations during the runtime.
+     */
+    // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
+#pragma omp parallel for  schedule(dynamic)  shared(countProblems, solutionsPerProblem)
     for (int i = 0; i < countProblems; i++) {
         if (!solutionsPerProblem[i].empty()) {
             solveBoard(solutionsPerProblem[i].front(), solutionsPerProblem[i]);
+            std::cout << "[" << processId << "]: solved a board (" << solutionsPerProblem[i].size()
+                      << " left) on problem {" << i << "} over " << omp_get_num_threads()
+                      << " threads." << std::endl;
             solutionsPerProblem[i].pop_front();
         }
     }
 
     // reduce computed solutions and add it to process solutions
+    int countNewSolutions = 0;
     for (auto &splitedSolutions : solutionsPerProblem) {
         for (auto &solution :splitedSolutions) {
             solutions.push_back(std::move(solution));
+            countNewSolutions += 1;
         }
     }
+    std::cout << "[" << processId << "]: found " << countNewSolutions << " new solutions." << std::endl;
 }
 
 bool SudokuBoard::testValueInCell(int row, int col, int value) const {
