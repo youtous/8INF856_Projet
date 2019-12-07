@@ -14,11 +14,11 @@
 /**
  * How many sub-problems to generate on the master node ?
  */
-const int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 128;
+const int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 256;
 /**
   * How many sub-problems to generate on the worker node when receiving work ?
  */
-const int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 128;
+const int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 256;
 
 int main(int argc, char *argv[]) {
     int processId;                              /* Process rank */
@@ -144,6 +144,9 @@ void initSolveMPI() {
         }
         std::cout << "[" << processId << "]: all results collected : " << solutionBoards.size() << ", solutions found!"
                   << std::endl;
+        for (auto const &solution : solutionBoards) {
+            std::cout << "Solution for board:" << std::endl << solution << std::endl << std::endl;
+        }
     } else {
         // send results to master
         sendAndConsumeDeque(solutionBoards, 0, CUSTOM_MPI_SOLUTIONS_TAG, MPI_COMM_WORLD);
