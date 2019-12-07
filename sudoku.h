@@ -402,6 +402,9 @@ void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::d
 
 /**
  * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.
+ *
+ * @complexity - O(n) where n = count received boards
+ *
  * @param dequeue - the receiving queue
  * @param src - from
  * @param tag - MPI_TAG
@@ -413,16 +416,20 @@ int receivePushBackDeque(std::deque<SudokuBoard> &dequeue, int src, int tag, MPI
 /**
  * Send a std::deque<int> using MPI. The queue will be consumed!
  *
+ * @complexity - O(n) where n = count send boards
+ *
  * @param dequeue - the receiving queue
  * @param dest - to
  * @param tag - MPI_TAG
  * @param comm - MPI_COMM
  * @param count - (optional) define how many items to send
  */
-void sendAndConsumeDeque(std::deque<SudokuBoard> &deque, int dest, int tag, MPI_Comm comm, int count=-1);
+void sendAndConsumeDeque(std::deque<SudokuBoard> &deque, int dest, int tag, MPI_Comm comm, int count = -1);
 
 /**
  * Send a SudokuBoard using MPI.
+ *
+ * @complexity - O(n) where n = number of cells in the board
  *
  * @param board - the board
  * @param dest - the destination process
@@ -433,6 +440,8 @@ void sendSudokuBoard(SudokuBoard &board, int dest, int tag, MPI_Comm pCommunicat
 
 /**
  * Receive a SudokuBoard using MPI.
+ *
+ * @complexity - O(n) where n = number of cells in the board
  *
  * @param src - source process
  * @param tag - MPI_TAG
