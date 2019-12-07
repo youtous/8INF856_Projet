@@ -376,7 +376,7 @@ void writeInFile(std::string const &fileName, std::string const &contentFile);
  * @param row - (optional) the row of the cell to work on
  * @param col - (optional) the column of the cell to work on
  */
-void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, int row = 0, int col = 0);
+void solveBoard(SudokuBoard board, std::deque<SudokuBoard> &resultSolutions, int row = 0, int col = 0);
 
 /**
  * Generate possibilities for the next empty cell of the front board to work.

@@ -152,7 +152,7 @@ void initSolveMPI() {
 
 // Begin of Solver methods
 
-void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, int row, int col) {
+void solveBoard(SudokuBoard board, std::deque<SudokuBoard> &resultSolutions, int row, int col) {
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
