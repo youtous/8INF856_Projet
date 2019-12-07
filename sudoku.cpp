@@ -73,7 +73,8 @@ void initSolveMPI() {
             return;
         }
 
-        std::cout << "[" << processId << "]: Generated " << problemBoards.size() << " initial problem boards to dispatch between workers."
+        std::cout << "[" << processId << "]: Generated " << problemBoards.size()
+                  << " initial problem boards to dispatch between workers."
                   << std::endl;
     }
 
@@ -171,7 +172,8 @@ void initSolveMPI() {
             int countReceivedSolutions = receivePushBackDeque(solutionBoards, workerId, CUSTOM_MPI_SOLUTIONS_TAG,
                                                               MPI_COMM_WORLD);
         }
-        std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size() << ", solutions found!"
+        std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size()
+                  << ", solutions found!"
                   << std::endl;
         for (auto const &solution : solutionBoards) {
             std::cout << "Solution for board:" << std::endl << solution << std::endl << std::endl;
@@ -189,19 +191,20 @@ SudokuBoard solveBoard(SudokuBoard board, int row, int col) {
     const int index = row * board.getRowSize() + col;
 
     // check end reached => terminate recursion
+    std::cerr << "index is : " << index << std::endl;
     if (index >= board.getSize()) {
         // the board is solved, return it
         return board;
     }
 
+
+    // value is valid, continue in to deep search
+    bool jumpRow = (col + 1) >= board.getRowSize();
+    int nextRow = row + (jumpRow ? 1 : 0);
+    int nextCol = jumpRow ? 0 : col + 1;
     // try all possible numbers in the cell
     for (int i = 1; i <= board.getBlockSize(); ++i) {
         if (board.testValueInCell(row, col, i)) {
-            // value is valid, continue in to deep search
-            bool jumpRow = (col + 1) >= board.getRowSize();
-            int nextRow = row + (jumpRow ? 1 : 0);
-            int nextCol = jumpRow ? 0 : col + 1;
-
             // set the value
             board[row][col] = i;
 
