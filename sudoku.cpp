@@ -99,11 +99,11 @@ void initSolveMPI() {
         std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
 
         // liberate workers from awaiting work loop
-        int responseWorkerId;
+        int responseWorkerId ;
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             // wait any idle response and indicate end of work to the worker
             MPI_Waitany(countProcess - 1, workersRequests.data(), &responseWorkerId, &idleRequestStatus);
-            sendAndConsumeDeque(problemBoards, workerId, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 0);
+            sendAndConsumeDeque(problemBoards, responseWorkerId + 1, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 0);
         }
     } else {
         unsigned int processLoad = 0;
