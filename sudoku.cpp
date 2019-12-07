@@ -609,21 +609,21 @@ void sendAndConsumeDeque(std::deque<SudokuBoard> &deque, int dest, int tag, MPI_
 
 
 void sendSudokuBoard(SudokuBoard &board, int dest, int tag, MPI_Comm pCommunicator) {
-    int len = board.getSize();
-    MPI_Send(&len, 1, MPI_INT, dest, tag, pCommunicator);
-    if (len != 0) {
-        MPI_Send(board.data(), len, MPI_INT, dest, tag, pCommunicator);
+    int sudokuSize = board.getSudokuDimension();
+    MPI_Send(&sudokuSize, 1, MPI_INT, dest, tag, pCommunicator);
+    if (sudokuSize != 0) {
+        MPI_Send(board.data(), board.getSize(), MPI_INT, dest, tag, pCommunicator);
     }
 }
 
 
 SudokuBoard receiveSudokuBoard(int src, int tag, MPI_Comm pCommunicator) {
-    int len;
+    int sudokuSize;
     MPI_Status s;
-    MPI_Recv(&len, 1, MPI_INT, src, tag, pCommunicator, &s);
-    SudokuBoard board((int) sqrt(sqrt(len)));
-    if (len != 0) {
-        MPI_Recv(board.data(), len, MPI_INT, src, tag, pCommunicator, &s);
+    MPI_Recv(&sudokuSize, 1, MPI_INT, src, tag, pCommunicator, &s);
+    SudokuBoard board(sudokuSize);
+    if (sudokuSize != 0) {
+        MPI_Recv(board.data(), board.getSize(), MPI_INT, src, tag, pCommunicator, &s);
     }
     return board;
 }
