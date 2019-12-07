@@ -592,7 +592,7 @@ int receivePushBackDeque(std::deque<SudokuBoard> &dequeue, int src, int tag, MPI
     MPI_Recv(&len, 1, MPI_UNSIGNED, src, tag, comm, &s);
 
     for (int i = 0; i < len; ++i) {
-        dequeue.push_back(receiveSudokuBoard(src, tag, comm));
+        dequeue.emplace_back(receiveSudokuBoard(src, tag, comm));
     }
     return len;
 }
