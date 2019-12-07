@@ -13,6 +13,8 @@
 #include <utility>
 
 #define CUSTOM_MPI_SOLUTIONS_TAG            10
+#define CUSTOM_MPI_POSSIBILITIES_TAG            11
+#define CUSTOM_MPI_IDLE_TAG            12
 
 
 /**
@@ -414,8 +416,9 @@ void receivePushBackDeque(std::deque<SudokuBoard> &dequeue, int src, int tag, MP
  * @param dest - to
  * @param tag - MPI_TAG
  * @param comm - MPI_COMM
+ * @param count - (optional) define how many items to send
  */
-void sendAndConsumeDeque(std::deque<SudokuBoard> &deque, int dest, int tag, MPI_Comm comm);
+void sendAndConsumeDeque(std::deque<SudokuBoard> &deque, int dest, int tag, MPI_Comm comm, int count=-1);
 
 /**
  * Send a SudokuBoard using MPI.
