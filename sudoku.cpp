@@ -124,6 +124,7 @@ void initSolveMPI() {
                 processLoad += countReceivedBoards;
             } else {
                 // end of the work
+                std::cout << "[" << processId << "]: finished to work on solving." << std::endl;
                 break;
             }
         } while (true);
@@ -274,9 +275,9 @@ void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoa
     for (int i = 0; i < countProblems; i++) {
         if (!solutionsPerProblem[i].empty()) {
             solveBoard(solutionsPerProblem[i].front(), solutionsPerProblem[i]);
-            std::cout << "[" << processId << "]: solved a board (" << solutionsPerProblem[i].size()
+            /* std::cout << "[" << processId << "]: solved a board (" << solutionsPerProblem[i].size()
                       << " left) on problem {" << i << "} over " << omp_get_num_threads()
-                      << " threads." << std::endl;
+                      << " threads." << std::endl; */
             solutionsPerProblem[i].pop_front();
         }
     }
