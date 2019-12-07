@@ -53,8 +53,6 @@ void initSolveMPI() {
     if (processId == 0) {
         SudokuBoard sudoku = createFromStdin();
 
-// todo : stop early when one solution is found
-// todo : make deep search more efficient
         std::cout << "[" << processId << "]: SudokuBoard to solve : " << std::endl << sudoku << std::endl;
 
         // generate the first sub-problems in order to dispatch work between nodes
@@ -70,12 +68,12 @@ void initSolveMPI() {
         }
 
         if (!solutionBoards.empty()) {
-            std::cout << "[" << processId << "]: a solution has been found :" << std::endl << solutionBoards.front()
+            std::cout << "[" << processId << "]: Solution found :" << std::endl << solutionBoards.front()
                       << std::endl;
             return;
         }
 
-        std::cout << "[" << processId << "]: generated " << problemBoards.size() << " initial problem boards to check."
+        std::cout << "[" << processId << "]: Generated " << problemBoards.size() << " initial problem boards to dispatch between workers."
                   << std::endl;
     }
 
@@ -83,14 +81,16 @@ void initSolveMPI() {
     if (processId == 0) {
         // master process opens idle requests from workers
         std::vector<MPI_Request> workersRequests(countProcess - 1);
+        std::vector<int> countSolutionsFoundOnProcess(countProcess - 1);
         for (int workerId = 1; workerId < countProcess; ++workerId) {
-            MPI_Irecv(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_IDLE_TAG,
+            MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId, CUSTOM_MPI_IDLE_TAG,
                       MPI_COMM_WORLD, (workersRequests.data() + workerId - 1));
         }
 
         // distribute work, iterate over each process worker until no work left
         int idleResponse;
         MPI_Status idleRequestStatus;
+        const int initialProblemsSize = problemBoards.size();
         while (!problemBoards.empty()) {
             for (int workerId = 1; workerId < countProcess; ++workerId) {
                 idleResponse = 0;
@@ -99,16 +99,30 @@ void initSolveMPI() {
 
                 // worker is idle ! send it some work
                 if (idleResponse) {
-                    std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
-                              << std::endl;
+                    //  std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
+                    //           << std::endl;
+                    std::cout << "\r[" << processId << "]: Dispatching ";
+                    std::cout << initialProblemsSize - problemBoards.size() << "/" << initialProblemsSize << std::flush;
+                    std::cout << " problems boards between workers.";
+
                     sendAndConsumeDeque(problemBoards, workerId, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 1);
-                    MPI_Irecv(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
+                    MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId,
+                              CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
                               (workersRequests.data() + workerId - 1));
+
+                    if (countSolutionsFoundOnProcess[workerId - 1] > 0) {
+                        // a worker has found a solution, remove remaining problem boards
+                        while (!problemBoards.empty()) {
+                            problemBoards.pop_front();
+                        }
+                        break;
+                    }
                 }
             }
         }
+        std::cout << "... finished!" << std::endl;
 
-        std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
+        // std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
 
         // liberate workers from awaiting work loop
         int responseWorkerId;
@@ -124,7 +138,9 @@ void initSolveMPI() {
             // notice master process is idle
             MPI_Request workerRequestIdle;
             MPI_Status idleRequestStatus;
-            MPI_Isend(nullptr, 0, MPI_INT, 0, CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD, &workerRequestIdle);
+            // send to master the number of solutions founds
+            int countSolutions = solutionBoards.size();
+            MPI_Isend(&countSolutions, 1, MPI_INT, 0, CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD, &workerRequestIdle);
             MPI_Wait(&workerRequestIdle, &idleRequestStatus);
 
             // wait work from master
@@ -134,21 +150,19 @@ void initSolveMPI() {
             if (countReceivedBoards > 0) {
                 SudokuBoard solution = solveProblemsOnNode(problemBoards);
                 if (!solution.isEmpty()) {
-                    // todo : return it to master
+                    solutionBoards.emplace_back(solution);
                     std::cout << "[" << processId << "]: a solution has been found :" << std::endl
                               << solution << std::endl;
-                    exit(1);
                 }
                 processLoad += countReceivedBoards;
             } else {
                 // end of the work
-                std::cout << "[" << processId << "]: finished to work on solving." << std::endl;
                 break;
             }
         } while (true);
 
-        std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size() << " solutions found over "
-                  << processLoad << " problem boards assigned." << std::endl;
+        //   std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size() << " solutions found over "
+        //             << processLoad << " problem boards assigned." << std::endl;
     }
 
     // collect results
@@ -156,11 +170,8 @@ void initSolveMPI() {
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             int countReceivedSolutions = receivePushBackDeque(solutionBoards, workerId, CUSTOM_MPI_SOLUTIONS_TAG,
                                                               MPI_COMM_WORLD);
-            std::cout << "[" << processId << "]: " << countReceivedSolutions << " solutions from process [" << workerId
-                      << "] have been collected."
-                      << std::endl;
         }
-        std::cout << "[" << processId << "]: all results collected : " << solutionBoards.size() << ", solutions found!"
+        std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size() << ", solutions found!"
                   << std::endl;
         for (auto const &solution : solutionBoards) {
             std::cout << "Solution for board:" << std::endl << solution << std::endl << std::endl;
@@ -415,7 +426,6 @@ SudokuBoard createFromStdin() {
 // Begin of data access methods
 
 int const &SudokuBoard::get(int row, int col) const {
-    // todo : eventually disable
     if (row > this->rows - 1 || row < 0 || col > this->cols - 1 || col < 0) {
         std::stringstream ss;
         ss << "Trying to get [" << row << "," << col << "] on a [" << rows << "," << cols << "] matrix";
