@@ -345,14 +345,6 @@ public:
 };
 
 /**
- * SolvingQueue class keeps in a double end access queue
- * valid solutions for a given SudokuBoard.
- */
-class SolvingQueue : public std::deque<SudokuBoard> {
-
-};
-
-/**
  * Create a SudokuBoard from a saved instance contained in a file.
  * @param fileName - file containing SudokuBoard's data.
  * @return - SudokuBoard initiated from the File.
@@ -399,6 +391,8 @@ void solveBoard(SudokuBoard &board, std::deque<SudokuBoard> &resultSolutions, in
  * @param solutions - list of possible boards solutions. If the board is valid, the board is added to solutions.
  */
 void generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork, std::deque<SudokuBoard> &solutions);
+
+void solveProblemsOnNode(std::deque<SudokuBoard> &problems, std::deque<SudokuBoard> &solutions);
 
 /**
  * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.
