@@ -361,6 +361,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
 
         if (!solution.isEmpty()) {
 #pragma omp critical
+            std::cout << "[" << processId << "]: found a solution, the program should stop." << std::endl;
             solutionFound = solution;
             // todo : check behavior
 #pragma omp cancel for
