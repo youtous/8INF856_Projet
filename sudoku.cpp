@@ -4,7 +4,6 @@
 
 #include <sstream>
 #include <iostream>
-#include <memory>
 #include <fstream>
 #include <iomanip>
 #include <math.h>
@@ -15,7 +14,7 @@
 /**
  * How many sub-problems to generate on the master node ?
  */
-static int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 1024;
+static int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 512;
 /**
  * How many sub-problems to generate on the worker node when receiving work ?
  */
@@ -159,6 +158,7 @@ void initSolveMPI() {
         }
 
         // liberate workers from awaiting work loop
+        // todo : send end of work message
         int responseWorkerId;
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             // wait any idle response and indicate end of work to the worker
@@ -230,6 +230,8 @@ SudokuBoard solveBoard(SudokuBoard &board, bool *stopFlag, int row, int col) {
     if (*stopFlag == true) {
         return SudokuBoard(0);
     }
+    // todo : test if stop work message has been received
+
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
