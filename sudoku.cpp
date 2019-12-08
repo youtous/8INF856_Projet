@@ -347,9 +347,10 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         if (!solution.isEmpty()) {
 #pragma omp critical
             solutionFound = solution;
+            // todo : check behavior
 #pragma omp cancel for
         }
-
+// see : http://jakascorner.com/blog/2016/08/omp-cancel.html
 #pragma omp cancellation point for
     }
 
