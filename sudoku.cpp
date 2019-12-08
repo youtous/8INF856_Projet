@@ -404,14 +404,17 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         if (!solution.isEmpty()) {
 #pragma omp critical
             {
-                // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
-                *foundSolution = true;
-                solutions.emplace_back(std::move(solution));
-            }
-            if (DEBUG >= DEBUG_BASE) {
+                if (!*foundSolution) {
+                    // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
+                    *foundSolution = true;
+                    solutions.emplace_back(std::move(solution));
+                    if (DEBUG >= DEBUG_BASE) {
+
+                    }
+                    std::cout << "[" << processId << "]: found a solution :" << solutions.front() << std::endl;
+                }
 
             }
-            std::cout << "[" << processId << "]: found a solution." << std::endl;
         }
     }
     delete foundSolution;
