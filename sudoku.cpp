@@ -195,11 +195,9 @@ void initSolveMPI() {
             }
         } while (true);
 
-        if (DEBUG >= DEBUG_BASE) {
-            std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size()
-                      << " solutions found over "
-                      << processLoad << " problem boards assigned." << std::endl;
-        }
+        std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size()
+                  << " solutions found over "
+                  << processLoad << " problem boards assigned." << std::endl;
     }
 
     // collect results
