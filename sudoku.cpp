@@ -119,6 +119,7 @@ void initSolveMPI() {
 
         // distribute work, iterate over each process worker until no work left
         int idleResponse;
+        int firstWinnerWorker = -1;
         const int initialProblemsSize = problemBoards.size();
         while (!problemBoards.empty()) {
             for (int workerId = 1; workerId < countProcess; ++workerId) {
@@ -133,6 +134,7 @@ void initSolveMPI() {
                         std::cout << "[" << processId << "]: " << workerId << " just found a solution !" << std::endl;
                         std::deque<SudokuBoard> empty;
                         std::swap(problemBoards, empty);
+                        firstWinnerWorker = workerId;
                     }
 
 
@@ -158,19 +160,22 @@ void initSolveMPI() {
         }
 
         // liberate workers from awaiting work loop
-        // todo : send end of work message
         int responseWorkerId;
         std::vector<MPI_Request> workersRequestsStop(countProcess - 1);
         for (int workerId = 1; workerId < countProcess; ++workerId) {
+            // skip for winner worker
+            if(firstWinnerWorker != -1 && workerId == firstWinnerWorker) {
+                continue;
+            }
+
+            // send end of work signal
             MPI_Isend(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_STOP_WORK_TAG, MPI_COMM_WORLD,
                       workersRequestsStop.data() + workerId - 1);
+
             // wait any idle response and indicate end of work to the worker
-            std::cout << "[" << processId << "]: a= " << workerId  << std::endl;
             MPI_Waitany(countProcess - 1, workersRequests.data(), &responseWorkerId, &idleRequestStatus);
             sendAndConsumeDeque(problemBoards, responseWorkerId + 1, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 0);
-            // todo : why blocked here
         }
-        std::cerr  << "[" << processId << "]: Finishied sending probes " << std::endl;
     } else {
         unsigned int processLoad = 0;
         // workers wait for work to do while the working queue is not empty
@@ -195,6 +200,7 @@ void initSolveMPI() {
                         std::cout << "[" << processId << "]: a solution has been found :" << std::endl
                                   << solution << std::endl;
                     }
+                    // receive empty problems as ACK
                 }
                 processLoad += countReceivedBoards;
             } else {
@@ -219,8 +225,7 @@ void initSolveMPI() {
             }
         }
         std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size()
-                  << ", solutions found!"
-                  << std::endl;
+                  << ", solutions found!"<< std::endl;
         for (auto const &solution : solutionBoards) {
             std::cout << "Solution for board:" << std::endl << solution << std::endl << std::endl;
         }
@@ -233,7 +238,7 @@ void initSolveMPI() {
 // Begin of Solver methods
 
 SudokuBoard solveBoard(SudokuBoard &board, bool *stopFlag, int row, int col) {
-    if (*stopFlag == true) {
+    if (*stopFlag) {
         return SudokuBoard(0);
     }
 
