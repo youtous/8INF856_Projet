@@ -62,7 +62,7 @@ void initSolveMPI() {
 
             if (!solution.isEmpty()) {
                 // solution found, end of generation
-                solutionBoards.emplace_back(solution);
+                solutionBoards.emplace_back(std::move(solution));
                 break;
             }
         }
@@ -232,7 +232,7 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
     // all cells have a value, we found a solution,
     // add it to the solutions list, JOB IS DONE !
     if (nextEmptyCell.first == -1) {
-        SudokuBoard solution = boardsToWork.front();
+        SudokuBoard solution = SudokuBoard(workingBoard);
         boardsToWork.pop_front();
         return solution;
     }
@@ -259,15 +259,11 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
     // and add it to the work queue
     for (auto const &value: possibleValuesInCell) {
         workingBoard[nextEmptyCell.first][nextEmptyCell.second] = value;
-        boardsToWork.emplace_back(workingBoard);
+        boardsToWork.emplace_back(SudokuBoard(workingBoard));
         possibleValuesInCell.pop_front();
-
-        if (possibleValuesInCell.empty()) {
-            // move to next board
-            // std::cerr << "moving to next board !" << std::endl;
-            boardsToWork.pop_front();
-        }
     }
+
+    boardsToWork.pop_front();
 
     return SudokuBoard(0);
 }
@@ -293,9 +289,10 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
 
     // for each problem, associate a dequeue of sultions
     std::vector<std::deque<SudokuBoard> > subProblems(problems.size());
+
     // split the problems in sub-problems in previous vector
-    for (auto &dequeueProblem: subProblems) {
-        dequeueProblem.emplace_back(std::move(problems.front()));
+    for (auto &subProblem : subProblems) {
+        subProblem.emplace_back(std::move(problems.front()));
         problems.pop_front();
     }
     // problems is now empty
