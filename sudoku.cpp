@@ -160,11 +160,16 @@ void initSolveMPI() {
         // liberate workers from awaiting work loop
         // todo : send end of work message
         int responseWorkerId;
+        std::vector<MPI_Request> workersRequestsStop(countProcess - 1);
         for (int workerId = 1; workerId < countProcess; ++workerId) {
+            MPI_Isend(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_STOP_WORK_TAG, MPI_COMM_WORLD,
+                      workersRequestsStop.data() + workerId - 1);
             // wait any idle response and indicate end of work to the worker
             MPI_Waitany(countProcess - 1, workersRequests.data(), &responseWorkerId, &idleRequestStatus);
             sendAndConsumeDeque(problemBoards, responseWorkerId + 1, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 0);
+            // todo : why blocked here
         }
+        std::cerr  << "[" << processId << "]: Finishied sending probes " << std::endl;
     } else {
         unsigned int processLoad = 0;
         // workers wait for work to do while the working queue is not empty
@@ -230,7 +235,6 @@ SudokuBoard solveBoard(SudokuBoard &board, bool *stopFlag, int row, int col) {
     if (*stopFlag == true) {
         return SudokuBoard(0);
     }
-    // todo : test if stop work message has been received
 
     // current cell computed
     const int index = row * board.getRowSize() + col;
@@ -362,7 +366,20 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
             // we can't break loop
             continue;
         }
-        SudokuBoard solution = solveBoard(subProblems[i].front(), foundSolution);
+        MPI_Status status;
+        int stopFromMaster;
+        MPI_Iprobe(0, CUSTOM_MPI_STOP_WORK_TAG, MPI_COMM_WORLD, &stopFromMaster, &status);
+        if (stopFromMaster) {
+            std::cerr << "[" << processId << "]: stop received" << std::endl;
+#pragma omp critical
+            {
+                *foundSolution = true;
+            }
+            continue;
+        }
+
+
+        SudokuBoard solution = solveBoard(subProblems[i].front(), foundSolution, processId);
         subProblems[i].pop_front();
 
         if (DEBUG >= DEBUG_BASE) {
@@ -386,7 +403,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     }
     delete foundSolution;
 
-    if(!solutions.empty()) {
+    if (!solutions.empty()) {
         return solutions.front();
     }
 
