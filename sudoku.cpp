@@ -376,7 +376,6 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         int stopFromMaster;
         MPI_Iprobe(0, CUSTOM_MPI_STOP_WORK_TAG, MPI_COMM_WORLD, &stopFromMaster, &status);
         if (stopFromMaster) {
-            std::cerr << "[" << processId << "]: stop received" << std::endl;
 #pragma omp critical
             {
                 *foundSolution = true;
