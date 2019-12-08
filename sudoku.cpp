@@ -106,6 +106,8 @@ void initSolveMPI() {
                   << std::endl;
     }
 
+    // the worker who found the solution
+    int firstWinnerWorker = -1;
     // balance load dynamically between processes
     if (processId == 0) {
         MPI_Status idleRequestStatus;
@@ -119,7 +121,6 @@ void initSolveMPI() {
 
         // distribute work, iterate over each process worker until no work left
         int idleResponse;
-        int firstWinnerWorker = -1;
         const int initialProblemsSize = problemBoards.size();
         while (!problemBoards.empty()) {
             for (int workerId = 1; workerId < countProcess; ++workerId) {
@@ -196,6 +197,7 @@ void initSolveMPI() {
                 SudokuBoard solution = solveProblemsOnNode(problemBoards);
                 if (!solution.isEmpty()) {
                     solutionBoards.emplace_back(solution);
+                    firstWinnerWorker = processId;
                     if (DEBUG >= DEBUG_BASE) {
                         std::cout << "[" << processId << "]: a solution has been found :" << std::endl
                                   << solution << std::endl;
@@ -216,15 +218,17 @@ void initSolveMPI() {
 
     // collect results
     if (processId == 0) {
-        for (int workerId = 1; workerId < countProcess; ++workerId) {
-            int countReceivedSolutions = receivePushBackDeque(solutionBoards, workerId, CUSTOM_MPI_SOLUTIONS_TAG,
+        if (firstWinnerWorker != -1) {
+            int countReceivedSolutions = receivePushBackDeque(solutionBoards, firstWinnerWorker,
+                                                              CUSTOM_MPI_SOLUTIONS_TAG,
                                                               MPI_COMM_WORLD);
             if (countReceivedSolutions > 0) {
-                if (DEBUG >= DEBUG_BASE) {
-                    std::cout << "[" << processId << "]: Worker[" << workerId << "] found " << countReceivedSolutions
-                              << " solution(s)." << std::endl;
-                }
+                std::cout << "[" << processId << "]: Worker[" << firstWinnerWorker << "] found "
+                          << countReceivedSolutions
+                          << " solution(s)." << std::endl;
+
             }
+
         }
         std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size()
                   << ", solutions found!" << std::endl;
@@ -233,7 +237,9 @@ void initSolveMPI() {
         }
     } else {
         // send results to master
-        sendAndConsumeDeque(solutionBoards, 0, CUSTOM_MPI_SOLUTIONS_TAG, MPI_COMM_WORLD);
+        if (processId == firstWinnerWorker) {
+            sendAndConsumeDeque(solutionBoards, 0, CUSTOM_MPI_SOLUTIONS_TAG, MPI_COMM_WORLD);
+        }
     }
 }
 
