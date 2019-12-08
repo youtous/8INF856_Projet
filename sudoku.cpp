@@ -308,7 +308,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
     int countProblems = subProblems.size();
     SudokuBoard solutionFound(0);
-#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutionFound)
+// #pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutionFound)
     for (int i = 0; i < countProblems; i++) {
         SudokuBoard solution = solveBoard(subProblems[i].front());
         subProblems[i].pop_front();
@@ -318,12 +318,13 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
       << " threads." << std::endl; */
 
         if (!solution.isEmpty()) {
-#pragma omp critical
+// #pragma omp critical
             solutionFound = solution;
-#pragma omp cancel for
+            break;
+// #pragma omp cancel for
         }
 
-#pragma omp cancellation point for
+// #pragma omp cancellation point for
     }
 
     if (!solutionFound.isEmpty()) {
