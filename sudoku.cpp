@@ -152,8 +152,8 @@ void initSolveMPI() {
                 SudokuBoard solution = solveProblemsOnNode(problemBoards);
                 if (!solution.isEmpty()) {
                     solutionBoards.emplace_back(solution);
-                    std::cout << "[" << processId << "]: a solution has been found :" << std::endl
-                              << solution << std::endl;
+                    /* std::cout << "[" << processId << "]: a solution has been found :" << std::endl
+                               << solution << std::endl; */
                 }
                 processLoad += countReceivedBoards;
             } else {
@@ -171,6 +171,10 @@ void initSolveMPI() {
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             int countReceivedSolutions = receivePushBackDeque(solutionBoards, workerId, CUSTOM_MPI_SOLUTIONS_TAG,
                                                               MPI_COMM_WORLD);
+            if (countReceivedSolutions > 0) {
+                std::cout << "[" << processId << "]: Worker[" << workerId << "] found " << countReceivedSolutions
+                          << " solution(s)." << std::endl;
+            }
         }
         std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size()
                   << ", solutions found!"
@@ -186,14 +190,14 @@ void initSolveMPI() {
 
 // Begin of Solver methods
 
-SudokuBoard solveBoard(SudokuBoard board, int row, int col) {
+SudokuBoard solveBoard(SudokuBoard &board, int row, int col) {
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
     // check end reached => terminate recursion
     if (index >= board.getSize()) {
         // the board is solved, return it
-        return board;
+        return SudokuBoard(board);
     }
 
 
@@ -201,6 +205,7 @@ SudokuBoard solveBoard(SudokuBoard board, int row, int col) {
     bool jumpRow = (col + 1) >= board.getRowSize();
     int nextRow = row + (jumpRow ? 1 : 0);
     int nextCol = jumpRow ? 0 : col + 1;
+    int oValue = board[row][col];
     // try all possible numbers in the cell
     for (int i = 1; i <= board.getBlockSize(); ++i) {
         if (board.testValueInCell(row, col, i)) {
@@ -209,6 +214,7 @@ SudokuBoard solveBoard(SudokuBoard board, int row, int col) {
 
             // compute next cell
             SudokuBoard solution = solveBoard(board, nextRow, nextCol);
+            board[row][col] = oValue;
             // if solution has been found, return recursion
             if (!solution.isEmpty()) {
                 return solution;
@@ -279,8 +285,6 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
 
         if (!solution.isEmpty()) {
             // solution found during generation
-            std::cerr << "Solution found !" << std::endl;
-            exit(1);
             return solution;
         }
     }
@@ -308,7 +312,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
     int countProblems = subProblems.size();
     SudokuBoard solutionFound(0);
-// #pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutionFound)
+#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutionFound)
     for (int i = 0; i < countProblems; i++) {
         SudokuBoard solution = solveBoard(subProblems[i].front());
         subProblems[i].pop_front();
@@ -318,19 +322,15 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
       << " threads." << std::endl; */
 
         if (!solution.isEmpty()) {
-// #pragma omp critical
+#pragma omp critical
             solutionFound = solution;
-            break;
-// #pragma omp cancel for
+#pragma omp cancel for
         }
 
-// #pragma omp cancellation point for
+#pragma omp cancellation point for
     }
 
     if (!solutionFound.isEmpty()) {
-        std::cerr << "Solution found after loop !" << std::endl << solutionFound <<
-                  std::endl;
-        exit(1);
         return solutionFound;
     }
 
