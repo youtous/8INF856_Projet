@@ -94,7 +94,8 @@ void initSolveMPI() {
         }
 
         if (!solutionBoards.empty()) {
-            std::cout << "[" << processId << "]: Solution found during first generation :" << std::endl << solutionBoards.front()
+            std::cout << "[" << processId << "]: Solution found during first generation :" << std::endl
+                      << solutionBoards.front()
                       << std::endl;
             std::deque<SudokuBoard> empty;
             std::swap(problemBoards, empty);
@@ -347,9 +348,15 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
      */
     // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
     int countProblems = subProblems.size();
-    SudokuBoard solutionFound(0);
-#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutionFound)
+    bool foundSolution = false;
+    std::deque<SudokuBoard> solutions;
+
+    #pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutions, foundSolution)
     for (int i = 0; i < countProblems; i++) {
+        if (foundSolution) {
+            // we can't break loop
+            continue;
+        }
         SudokuBoard solution = solveBoard(subProblems[i].front());
         subProblems[i].pop_front();
 
@@ -360,22 +367,25 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         }
 
         if (!solution.isEmpty()) {
-#pragma omp critical
-            std::cout << "[" << processId << "]: found a solution, the program should stop." << std::endl;
-            solutionFound = solution;
+            #pragma omp critical
+            {
+                // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
+                foundSolution = true;
+                solutions.emplace_back(std::move(solution));
+            }
+            std::cout << "[" << processId << "]: found a solution, the programm should stop." << std::endl;
             // todo : check behavior
-#pragma omp cancel for
         }
-// see : http://jakascorner.com/blog/2016/08/omp-cancel.html
-#pragma omp cancellation point for
     }
 
-    if (!solutionFound.isEmpty()) {
-        return solutionFound;
+    if (!solutions.empty()) {
+        std::cout << "[" << processId << "]: found a solution, the programm should stop." << std::endl;
+    } else {
+        std::cout << "[" << processId << "]: no viable solution." << std::endl;
     }
 
     // no solution found
-    return solutionFound;
+    return solutions.front();
 }
 
 bool SudokuBoard::testValueInCell(int row, int col, int value) const {

@@ -18,7 +18,7 @@ sudoku-cluster: sudoku.o ## Compile then sync sudoku on the cluster
 	./sync.sh
 
 sudoku-cluster-exec: sudoku.o  ## Execute sudoku on the cluster
-	mpiexec --npernode 1 -n 16 $< 0 < puzzles/grid_reference_8.txt
+	mpiexec --npernode 1 -n 16 $< 0 < puzzles/4_hard.txt
 
 sync: ## Synchronise files on cluster
 	chmod +x ./sync.sh
