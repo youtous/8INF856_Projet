@@ -4,6 +4,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <memory>
 #include <fstream>
 #include <iomanip>
 #include <math.h>
@@ -111,7 +112,7 @@ void initSolveMPI() {
         MPI_Status idleRequestStatus;
         // master process opens idle requests from workers
         std::vector<MPI_Request> workersRequests(countProcess - 1);
-        std::vector<int> countSolutionsFoundOnProcess(countProcess - 1);
+        std::vector<int> countSolutionsFoundOnProcess(countProcess - 1, 0);
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId, CUSTOM_MPI_IDLE_TAG,
                       MPI_COMM_WORLD, (workersRequests.data() + workerId - 1));
@@ -128,6 +129,14 @@ void initSolveMPI() {
 
                 // worker is idle ! send it some work
                 if (idleResponse) {
+                    if (countSolutionsFoundOnProcess[workerId - 1] > 0) {
+                        // a worker has found a solution, remove remaining problem boards
+                        std::cout << "[" << processId << "]: " << workerId << " just found a solution !" << std::endl;
+                        std::deque<SudokuBoard> empty;
+                        std::swap(problemBoards, empty);
+                    }
+
+
                     if (DEBUG >= DEBUG_BASE) {
                         std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
                                   << std::endl;
@@ -140,19 +149,10 @@ void initSolveMPI() {
                     MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId,
                               CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
                               (workersRequests.data() + workerId - 1));
-
-                    if (countSolutionsFoundOnProcess[workerId - 1] > 0) {
-                        // a worker has found a solution, remove remaining problem boards
-                        break;
-                    }
                 }
             }
         }
         std::cout << "... finished!" << std::endl;
-
-        // ensure problem queue is empty
-        std::deque<SudokuBoard> empty;
-        std::swap(problemBoards, empty);
 
         if (DEBUG >= DEBUG_BASE) {
             std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
