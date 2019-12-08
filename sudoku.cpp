@@ -165,6 +165,7 @@ void initSolveMPI() {
             MPI_Isend(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_STOP_WORK_TAG, MPI_COMM_WORLD,
                       workersRequestsStop.data() + workerId - 1);
             // wait any idle response and indicate end of work to the worker
+            std::cout << "[" << processId << "]: a= " << workerId  << std::endl;
             MPI_Waitany(countProcess - 1, workersRequests.data(), &responseWorkerId, &idleRequestStatus);
             sendAndConsumeDeque(problemBoards, responseWorkerId + 1, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 0);
             // todo : why blocked here
