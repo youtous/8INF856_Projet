@@ -113,15 +113,16 @@ void initSolveMPI() {
 
                     if (countSolutionsFoundOnProcess[workerId - 1] > 0) {
                         // a worker has found a solution, remove remaining problem boards
-                        while (!problemBoards.empty()) {
-                            problemBoards.pop_front();
-                        }
                         break;
                     }
                 }
             }
         }
         std::cout << "... finished!" << std::endl;
+
+        // ensure problem queue is empty
+        std::deque<SudokuBoard> empty;
+        std::swap(problemBoards, empty);
 
         // std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
 
