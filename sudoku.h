@@ -351,7 +351,7 @@ public:
 
 /**
  * Create a SudokuBoard from a saved instance contained in a file.
- * 
+ *
  * @param fileName - file containing SudokuBoard's data.
  * @return - SudokuBoard initiated from the File.
  */

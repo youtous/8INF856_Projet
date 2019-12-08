@@ -30,3 +30,5 @@ todo : https://github.com/bryanesmith/SudokuBoard-solver/blob/master/SudokuPuzzl
 
 ====
 Simple sudoku solver in C : https://github.com/joubu/SudokuSolver/blob/master/sudoku.c
+
+Lecture about this : https://www.cs.cmu.edu/~mtschant/15414-f07/lectures/sudoku.pdf
