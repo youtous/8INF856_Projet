@@ -280,11 +280,13 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
 
         if (!solution.isEmpty()) {
             // solution found during generation
+            std::cerr << "Solution found !" << std::endl;
+            exit(1);
             return solution;
         }
     }
 
-    std::cout << "[" << processId << "]: generated " << problems.size() << " problem boards to check." << std::endl;
+    // std::cout << "[" << processId << "]: generated " << problems.size() << " problem boards to check." << std::endl;
 
 
     // for each problem, associate a dequeue of sultions
