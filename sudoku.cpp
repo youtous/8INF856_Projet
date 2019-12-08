@@ -164,7 +164,7 @@ void initSolveMPI() {
         std::vector<MPI_Request> workersRequestsStop(countProcess - 1);
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             // skip for winner worker
-            if(firstWinnerWorker != -1 && workerId == firstWinnerWorker) {
+            if (firstWinnerWorker != -1 && workerId == firstWinnerWorker) {
                 continue;
             }
 
@@ -220,12 +220,14 @@ void initSolveMPI() {
             int countReceivedSolutions = receivePushBackDeque(solutionBoards, workerId, CUSTOM_MPI_SOLUTIONS_TAG,
                                                               MPI_COMM_WORLD);
             if (countReceivedSolutions > 0) {
-                std::cout << "[" << processId << "]: Worker[" << workerId << "] found " << countReceivedSolutions
-                          << " solution(s)." << std::endl;
+                if (DEBUG >= DEBUG_BASE) {
+                    std::cout << "[" << processId << "]: Worker[" << workerId << "] found " << countReceivedSolutions
+                              << " solution(s)." << std::endl;
+                }
             }
         }
         std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size()
-                  << ", solutions found!"<< std::endl;
+                  << ", solutions found!" << std::endl;
         for (auto const &solution : solutionBoards) {
             std::cout << "Solution for board:" << std::endl << solution << std::endl << std::endl;
         }
