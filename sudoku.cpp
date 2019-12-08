@@ -384,8 +384,12 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     }
     delete foundSolution;
 
+    if(!solutions.empty()) {
+        return solutions.front();
+    }
+
     // no solution found
-    return solutions.front();
+    return SudokuBoard(0);
 }
 
 bool SudokuBoard::testValueInCell(int row, int col, int value) const {
