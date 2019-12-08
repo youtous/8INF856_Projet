@@ -24,6 +24,10 @@ static int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
  */
 static int THREADS_ON_WORKERS = 8;
 
+static int DEBUG = 0;
+
+static const int DEBUG_BASE = 1;
+
 int main(int argc, char *argv[]) {
     int processId;                              /* Process rank */
     int countProcess;                           /* Number of processes */
@@ -122,8 +126,10 @@ void initSolveMPI() {
 
                 // worker is idle ! send it some work
                 if (idleResponse) {
-                    //  std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
-                    //           << std::endl;
+                    if (DEBUG >= DEBUG_BASE) {
+                        std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
+                                  << std::endl;
+                    }
                     std::cout << "\r[" << processId << "]: Dispatching ";
                     std::cout << initialProblemsSize - problemBoards.size() << "/" << initialProblemsSize << std::flush;
                     std::cout << " problems boards between workers.";
@@ -146,7 +152,9 @@ void initSolveMPI() {
         std::deque<SudokuBoard> empty;
         std::swap(problemBoards, empty);
 
-        // std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
+        if (DEBUG >= DEBUG_BASE) {
+            std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
+        }
 
         // liberate workers from awaiting work loop
         int responseWorkerId;
@@ -175,8 +183,10 @@ void initSolveMPI() {
                 SudokuBoard solution = solveProblemsOnNode(problemBoards);
                 if (!solution.isEmpty()) {
                     solutionBoards.emplace_back(solution);
-                    /* std::cout << "[" << processId << "]: a solution has been found :" << std::endl
-                               << solution << std::endl; */
+                    if (DEBUG >= DEBUG_BASE) {
+                        std::cout << "[" << processId << "]: a solution has been found :" << std::endl
+                                  << solution << std::endl;
+                    }
                 }
                 processLoad += countReceivedBoards;
             } else {
@@ -185,8 +195,11 @@ void initSolveMPI() {
             }
         } while (true);
 
-        //   std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size() << " solutions found over "
-        //             << processLoad << " problem boards assigned." << std::endl;
+        if (DEBUG >= DEBUG_BASE) {
+            std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size()
+                      << " solutions found over "
+                      << processLoad << " problem boards assigned." << std::endl;
+        }
     }
 
     // collect results
@@ -312,8 +325,9 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         }
     }
 
-    // std::cout << "[" << processId << "]: generated " << problems.size() << " problem boards to check." << std::endl;
-
+    if (DEBUG >= DEBUG_BASE) {
+        std::cout << "[" << processId << "]: generated " << problems.size() << " problem boards to check." << std::endl;
+    }
 
     // for each problem, associate a dequeue of sultions
     std::vector<std::deque<SudokuBoard> > subProblems(problems.size());
@@ -340,9 +354,11 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         SudokuBoard solution = solveBoard(subProblems[i].front());
         subProblems[i].pop_front();
 
-        /* std::cout << "[" << processId << "]: solved a board (" << subProblems[i].size()
-      << " left) on problem {" << i << "} over " << omp_get_num_threads()
-      << " threads." << std::endl; */
+        if (DEBUG >= DEBUG_BASE) {
+            std::cout << "[" << processId << "]: solved a board (" << subProblems[i].size()
+                      << " left) on problem {" << i << "} over " << omp_get_num_threads()
+                      << " threads." << std::endl;
+        }
 
         if (!solution.isEmpty()) {
 #pragma omp critical
