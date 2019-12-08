@@ -351,6 +351,7 @@ public:
 
 /**
  * Create a SudokuBoard from a saved instance contained in a file.
+ * 
  * @param fileName - file containing SudokuBoard's data.
  * @return - SudokuBoard initiated from the File.
  */
@@ -359,12 +360,14 @@ SudokuBoard createFromFile(std::string const &fileName);
 /**
  * Create a SudokuBoard from an stdin, the first element contains
  * the size of the SudokuBoard.
+ *
  * @return - SudokuBoard initiated from the File.
  */
 SudokuBoard createFromStdin();
 
 /**
  * Write in a File a given content.
+ *
  * @param fileName - path of the file to write.
  * @param contentFile - content of the file to set.
  */
@@ -398,6 +401,12 @@ SudokuBoard solveBoard(SudokuBoard &board, int row = 0, int col = 0);
  */
 SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork);
 
+/**
+ * On the process node, divide problems in sub-problems and run them on different threads.
+ *
+ * @param problems - problems to solve
+ * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
+ */
 SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems);
 
 /**
