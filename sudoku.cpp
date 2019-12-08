@@ -94,9 +94,10 @@ void initSolveMPI() {
         }
 
         if (!solutionBoards.empty()) {
-            std::cout << "[" << processId << "]: Solution found :" << std::endl << solutionBoards.front()
+            std::cout << "[" << processId << "]: Solution found during first generation :" << std::endl << solutionBoards.front()
                       << std::endl;
-            return;
+            std::deque<SudokuBoard> empty;
+            std::swap(problemBoards, empty);
         }
 
         std::cout << "[" << processId << "]: Generated " << problemBoards.size()
