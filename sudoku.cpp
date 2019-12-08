@@ -191,7 +191,6 @@ SudokuBoard solveBoard(SudokuBoard board, int row, int col) {
     const int index = row * board.getRowSize() + col;
 
     // check end reached => terminate recursion
-    std::cerr << "index is : " << index << std::endl;
     if (index >= board.getSize()) {
         // the board is solved, return it
         return board;
