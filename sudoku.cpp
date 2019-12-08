@@ -226,7 +226,10 @@ void initSolveMPI() {
 
 // Begin of Solver methods
 
-SudokuBoard solveBoard(SudokuBoard &board, int row, int col) {
+SudokuBoard solveBoard(SudokuBoard &board, bool *stopFlag, int row, int col) {
+    if (*stopFlag == true) {
+        return SudokuBoard(0);
+    }
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
@@ -249,7 +252,7 @@ SudokuBoard solveBoard(SudokuBoard &board, int row, int col) {
             board[row][col] = i;
 
             // compute next cell
-            SudokuBoard solution = solveBoard(board, nextRow, nextCol);
+            SudokuBoard solution = solveBoard(board, stopFlag, nextRow, nextCol);
             board[row][col] = oValue;
             // if solution has been found, return recursion
             if (!solution.isEmpty()) {
@@ -348,16 +351,16 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
      */
     // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
     int countProblems = subProblems.size();
-    bool foundSolution = false;
+    bool *foundSolution = new bool(false);
     std::deque<SudokuBoard> solutions;
 
-    #pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutions, foundSolution)
+#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutions, foundSolution)
     for (int i = 0; i < countProblems; i++) {
-        if (foundSolution) {
+        if (*foundSolution) {
             // we can't break loop
             continue;
         }
-        SudokuBoard solution = solveBoard(subProblems[i].front());
+        SudokuBoard solution = solveBoard(subProblems[i].front(), foundSolution);
         subProblems[i].pop_front();
 
         if (DEBUG >= DEBUG_BASE) {
@@ -367,22 +370,19 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         }
 
         if (!solution.isEmpty()) {
-            #pragma omp critical
+#pragma omp critical
             {
                 // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
-                foundSolution = true;
+                *foundSolution = true;
                 solutions.emplace_back(std::move(solution));
             }
-            std::cout << "[" << processId << "]: found a solution, the programm should stop." << std::endl;
-            // todo : check behavior
+            if (DEBUG >= DEBUG_BASE) {
+
+            }
+            std::cout << "[" << processId << "]: found a solution." << std::endl;
         }
     }
-
-    if (!solutions.empty()) {
-        std::cout << "[" << processId << "]: found a solution, the programm should stop." << std::endl;
-    } else {
-        std::cout << "[" << processId << "]: no viable solution." << std::endl;
-    }
+    delete foundSolution;
 
     // no solution found
     return solutions.front();
