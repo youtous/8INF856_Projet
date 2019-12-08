@@ -16,7 +16,7 @@
  */
 const int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 512;
 /**
-  * How many sub-problems to generate on the worker node when receiving work ?
+ * How many sub-problems to generate on the worker node when receiving work ?
  */
 const int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
 
@@ -29,7 +29,23 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
+    // exec timing
+    double p1TotalTime = 0;
+    double p1Time = -MPI_Wtime();
+
     initSolveMPI();
+
+    // finish timing
+    MPI_Barrier(MPI_COMM_WORLD);
+    p1Time += MPI_Wtime();
+    MPI_Reduce(&p1Time, &p1TotalTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (processId == 0) {
+        std::cout << std::fixed;
+        std::cout << "Process [" << processId << "] : sudoku solving puzzle " << " on " << countProcess
+                  << " processes took: "
+                  << p1TotalTime << " seconds. " << std::endl;
+        std::cout.unsetf(std::ios::fixed);
+    }
 
     MPI_Finalize();
     return 0;
