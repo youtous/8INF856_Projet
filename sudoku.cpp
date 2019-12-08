@@ -69,10 +69,12 @@ void initSolveMPI() {
     if (processId == 0) {
         SudokuBoard sudoku = createFromStdin();
 
-        std::cout << "[" << processId << "]: SudokuBoard to solve : " << std::endl << sudoku << std::endl;
+        std::cout << "[" << processId << "]: SudokuBoard(" << sudoku.getSudokuDimension() << ") "
+                  << sudoku.getColumnSize() << "x" << sudoku.getRowSize() << " to solve : " << std::endl << sudoku
+                  << std::endl;
 
         // generate the first sub-problems in order to dispatch work between nodes
-        problemBoards.emplace_front(sudoku);
+        problemBoards.emplace_front(std::move(sudoku));
         while (!problemBoards.empty() && problemBoards.size() < COUNT_PROBLEMS_TO_GENERATE_ON_MASTER) {
             SudokuBoard solution = generatePossibilitiesNextCell(problemBoards);
 
@@ -281,7 +283,7 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
     // and add it to the work queue
     for (auto const &value: possibleValuesInCell) {
         workingBoard[nextEmptyCell.first][nextEmptyCell.second] = value;
-        boardsToWork.emplace_back(SudokuBoard(workingBoard));
+        boardsToWork.emplace_back(workingBoard);
         possibleValuesInCell.pop_front();
     }
 
@@ -451,11 +453,11 @@ SudokuBoard createFromStdin() {
 // Begin of data access methods
 
 int const &SudokuBoard::get(int row, int col) const {
-    if (row > this->rows - 1 || row < 0 || col > this->cols - 1 || col < 0) {
+    /**if (row > this->rows - 1 || row < 0 || col > this->cols - 1 || col < 0) {
         std::stringstream ss;
         ss << "Trying to get [" << row << "," << col << "] on a [" << rows << "," << cols << "] matrix";
         throw std::out_of_range(ss.str());
-    }
+    } */
     return this->arrAsLine[this->cols * row + col];
 }
 
