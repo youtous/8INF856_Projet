@@ -14,11 +14,15 @@
 /**
  * How many sub-problems to generate on the master node ?
  */
-const int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 512;
+static int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 1024;
 /**
  * How many sub-problems to generate on the worker node when receiving work ?
  */
-const int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
+static int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
+/**
+ * How many threads to use on local computation ?
+ */
+static int THREADS_ON_WORKERS = 8;
 
 int main(int argc, char *argv[]) {
     int processId;                              /* Process rank */
@@ -321,7 +325,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     }
     // problems is now empty
 
-    omp_set_num_threads(8);
+    omp_set_num_threads(THREADS_ON_WORKERS);
 
     /*
      * The dynamic scheduling type is appropriate when the iterations require different computational costs.
