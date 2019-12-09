@@ -20,6 +20,10 @@ sudoku-cluster: sudoku.o ## Compile then sync sudoku on the cluster
 sudoku-cluster-exec: sudoku.o  ## Execute sudoku on the cluster
 	mpiexec --npernode 1 -n 16 $< 0 < puzzles/4_hard.txt
 
+
+generator.o: generator.cpp ## Compile sequential app
+	$(CC) $< -o $@ $(CFLAGS)
+
 sync: ## Synchronise files on cluster
 	chmod +x ./sync.sh
 	./sync.sh

@@ -6,4 +6,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(8INF856_Projet sudoku.cpp)
-add_executable(SudokuGenerator "Sudoku Generator/main.cpp" "Sudoku Generator/sudoku-gen.cpp")
+add_executable(SudokuGenerator generator.cpp)
