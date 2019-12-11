@@ -37,23 +37,7 @@ int main(int argc, char *argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
-    // exec timing
-    double p1TotalTime = 0;
-    double p1Time = -MPI_Wtime();
-
     initSolveMPI();
-
-    // finish timing
-    MPI_Barrier(MPI_COMM_WORLD);
-    p1Time += MPI_Wtime();
-    MPI_Reduce(&p1Time, &p1TotalTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (processId == 0) {
-        std::cout << std::fixed;
-        std::cout << "Process [" << processId << "] : sudoku solving puzzle " << " on " << countProcess
-                  << " processes took: "
-                  << p1TotalTime << " seconds. " << std::endl;
-        std::cout.unsetf(std::ios::fixed);
-    }
 
     MPI_Finalize();
     return 0;
@@ -71,6 +55,9 @@ void initSolveMPI() {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
+
+    // exec timing
+    double p1Time = -MPI_Wtime();
 
     // init sudoku solving on master
     // compute first boards to investigate
@@ -134,9 +121,10 @@ void initSolveMPI() {
                         // a worker has found a solution, remove remaining problem boards
                         successWorkerId = workerId;
                         std::cout << "[" << processId << "]: " << workerId << " just found a solution !" << std::endl;
-                        // empty working queue
+                        // empty working queue then finish
                         std::deque<SudokuBoard> empty;
                         std::swap(problemBoards, empty);
+                        break;
                     } else {
                         // otherwise, send it some work
                         if (DEBUG >= DEBUG_BASE) {
@@ -164,14 +152,6 @@ void initSolveMPI() {
 
         if (DEBUG >= DEBUG_BASE) {
             std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
-        }
-
-        // liberate workers from awaiting work loop
-        int responseWorkerId;
-        for (int workerId = 1; workerId < countProcess; ++workerId) {
-            // wait any idle response and indicate end of work to the worker
-            MPI_Waitany(countProcess - 1, workersRequests.data(), &responseWorkerId, &idleRequestStatus);
-            sendAndConsumeDeque(problemBoards, responseWorkerId + 1, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 0);
         }
     } else {
         unsigned int processLoad = 0;
@@ -230,6 +210,20 @@ void initSolveMPI() {
     if (successWorkerId == processId) {
         // send results to master
         sendAndConsumeDeque(solutionBoards, 0, CUSTOM_MPI_SOLUTIONS_TAG, MPI_COMM_WORLD);
+    }
+
+    // finish timing
+    p1Time += MPI_Wtime();
+    if (processId == 0) {
+        std::cout << std::fixed;
+        std::cout << "Process [" << processId << "] : sudoku solving puzzle " << " on " << countProcess
+                  << " processes took: "
+                  << p1Time << " seconds. " << std::endl;
+        std::cout.unsetf(std::ios::fixed);
+    }
+    if(processId == 0) {
+        // end of the work for everyone !
+        MPI_Abort(MPI_COMM_WORLD, 0);
     }
 }
 
