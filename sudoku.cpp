@@ -129,22 +129,29 @@ void initSolveMPI() {
 
                 // worker is idle ! send it some work
                 if (idleResponse) {
-                    if (DEBUG >= DEBUG_BASE) {
-                        std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
-                                  << std::endl;
-                    }
-                    std::cout << "\r[" << processId << "]: Dispatching ";
-                    std::cout << initialProblemsSize - problemBoards.size() << "/" << initialProblemsSize << std::flush;
-                    std::cout << " problems boards between workers.";
-
-                    sendAndConsumeDeque(problemBoards, workerId, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 1);
-                    MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId,
-                              CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
-                              (workersRequests.data() + workerId - 1));
-
+                    // check if the worker has finished ?
                     if (countSolutionsFoundOnProcess[workerId - 1] > 0) {
                         // a worker has found a solution, remove remaining problem boards
-                        break;
+                        successWorkerId = workerId;
+                        std::cout << "[" << processId << "]: " << workerId << " just found a solution !" << std::endl;
+                        // empty working queue
+                        std::deque<SudokuBoard> empty;
+                        std::swap(problemBoards, empty);
+                    } else {
+                        // otherwise, send it some work
+                        if (DEBUG >= DEBUG_BASE) {
+                            std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
+                                      << std::endl;
+                        }
+                        std::cout << "\r[" << processId << "]: Dispatching ";
+                        std::cout << initialProblemsSize - problemBoards.size() << "/" << initialProblemsSize
+                                  << std::flush;
+                        std::cout << " problems boards between workers.";
+
+                        sendAndConsumeDeque(problemBoards, workerId, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 1);
+                        MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId,
+                                  CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
+                                  (workersRequests.data() + workerId - 1));
                     }
                 }
             }
