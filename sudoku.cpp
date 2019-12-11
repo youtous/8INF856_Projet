@@ -379,14 +379,12 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
             }
             std::cout << "[" << processId << "]{" << omp_get_thread_num()
                       << "}: found a solution, the programm should stop." << std::endl;
-            // todo : check behavior
         }
     }
 
     if (!solutions.empty()) {
-        std::cout << "[" << processId << "]: found a solution, the programm should stop." << std::endl;
-    } else {
-        std::cout << "[" << processId << "]: no viable solution." << std::endl;
+        std::cout << "[" << processId << "]: found a solution, returning it : " << std::endl << solutions.front()
+                  << std::endl;
     }
 
     // no solution found
