@@ -107,11 +107,12 @@ void initSolveMPI() {
     }
 
     // balance load dynamically between processes
+    int successWorkerId = -1;
     if (processId == 0) {
         MPI_Status idleRequestStatus;
         // master process opens idle requests from workers
         std::vector<MPI_Request> workersRequests(countProcess - 1);
-        std::vector<int> countSolutionsFoundOnProcess(countProcess - 1);
+        std::vector<int> countSolutionsFoundOnProcess(countProcess - 1, 0);
         for (int workerId = 1; workerId < countProcess; ++workerId) {
             MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId, CUSTOM_MPI_IDLE_TAG,
                       MPI_COMM_WORLD, (workersRequests.data() + workerId - 1));
@@ -204,21 +205,17 @@ void initSolveMPI() {
 
     // collect results
     if (processId == 0) {
-        for (int workerId = 1; workerId < countProcess; ++workerId) {
-            int countReceivedSolutions = receivePushBackDeque(solutionBoards, workerId, CUSTOM_MPI_SOLUTIONS_TAG,
-                                                              MPI_COMM_WORLD);
-            if (countReceivedSolutions > 0) {
-                std::cout << "[" << processId << "]: Worker[" << workerId << "] found " << countReceivedSolutions
-                          << " solution(s)." << std::endl;
-            }
+        if (successWorkerId != -1) {
+            receivePushBackDeque(solutionBoards, successWorkerId, CUSTOM_MPI_SOLUTIONS_TAG,
+                                 MPI_COMM_WORLD);
+            std::cout << "[" << processId << "]: Worker[" << successWorkerId << "] found a solution." << std::endl;
+            std::cout << "[" << processId << "] Solution for board:" << std::endl << solutionBoards.front()
+                      << std::endl;
+        } else {
+            std::cout << "[" << processId << "] No solution found for the board." << std::endl;
         }
-        std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size()
-                  << ", solutions found!"
-                  << std::endl;
-        for (auto const &solution : solutionBoards) {
-            std::cout << "Solution for board:" << std::endl << solution << std::endl << std::endl;
-        }
-    } else {
+    }
+    if (successWorkerId == processId) {
         // send results to master
         sendAndConsumeDeque(solutionBoards, 0, CUSTOM_MPI_SOLUTIONS_TAG, MPI_COMM_WORLD);
     }
