@@ -226,7 +226,10 @@ void initSolveMPI() {
 
 // Begin of Solver methods
 
-SudokuBoard solveBoard(SudokuBoard &board, int row, int col) {
+SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col) {
+    if (solutionFound) {
+        return SudokuBoard(0);
+    }
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
@@ -249,7 +252,7 @@ SudokuBoard solveBoard(SudokuBoard &board, int row, int col) {
             board[row][col] = i;
 
             // compute next cell
-            SudokuBoard solution = solveBoard(board, nextRow, nextCol);
+            SudokuBoard solution = solveBoard(board, solutionFound, nextRow, nextCol);
             board[row][col] = oValue;
             // if solution has been found, return recursion
             if (!solution.isEmpty()) {
@@ -348,16 +351,17 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
      */
     // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
     int countProblems = subProblems.size();
-    bool foundSolution = false;
+    bool solutionFound = false;
     std::deque<SudokuBoard> solutions;
 
-    #pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutions, foundSolution)
+#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutions, solutionFound)
     for (int i = 0; i < countProblems; i++) {
-        if (foundSolution) {
+        if (solutionFound) {
             // we can't break loop
+            // std::cout << "[" << processId << "]{" << omp_get_thread_num() << "} skipping loop..." << std::endl;
             continue;
         }
-        SudokuBoard solution = solveBoard(subProblems[i].front());
+        SudokuBoard solution = solveBoard(subProblems[i].front(), solutionFound);
         subProblems[i].pop_front();
 
         if (DEBUG >= DEBUG_BASE) {
@@ -367,13 +371,14 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         }
 
         if (!solution.isEmpty()) {
-            #pragma omp critical
+#pragma omp critical
             {
                 // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
-                foundSolution = true;
+                solutionFound = true;
                 solutions.emplace_back(std::move(solution));
             }
-            std::cout << "[" << processId << "]: found a solution, the programm should stop." << std::endl;
+            std::cout << "[" << processId << "]{" << omp_get_thread_num()
+                      << "}: found a solution, the programm should stop." << std::endl;
             // todo : check behavior
         }
     }
