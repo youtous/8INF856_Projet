@@ -191,6 +191,10 @@ void initSolveMPI() {
                         std::cout << "[" << processId << "]: a solution has been found :" << std::endl
                                   << solution << std::endl;
                     }
+                    // mark current process as winner and inform master process, then finish
+                    successWorkerId = processId;
+                    countSolutions = solutionBoards.size();
+                    MPI_Isend(&countSolutions, 1, MPI_INT, 0, CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD, &workerRequestIdle);
                     break;
                 }
             } else {
