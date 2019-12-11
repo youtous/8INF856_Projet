@@ -181,6 +181,7 @@ void initSolveMPI() {
             // wait work from master
             int countReceivedBoards = receivePushBackDeque(problemBoards, 0, CUSTOM_MPI_POSSIBILITIES_TAG,
                                                            MPI_COMM_WORLD);
+            processLoad += countReceivedBoards;
 
             if (countReceivedBoards > 0) {
                 SudokuBoard solution = solveProblemsOnNode(problemBoards);
@@ -190,10 +191,10 @@ void initSolveMPI() {
                         std::cout << "[" << processId << "]: a solution has been found :" << std::endl
                                   << solution << std::endl;
                     }
+                    break;
                 }
-                processLoad += countReceivedBoards;
             } else {
-                // end of the work
+                // end of the work, no more board to compute
                 break;
             }
         } while (true);
@@ -380,12 +381,13 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     }
 
     if (!solutions.empty()) {
-        std::cout << "[" << processId << "]: found a solution, returning it : " << std::endl << solutions.front()
+        std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: found a solution, returning..."
                   << std::endl;
+        return solutions.front();
     }
 
     // no solution found
-    return solutions.front();
+    return SudokuBoard(0);
 }
 
 bool SudokuBoard::testValueInCell(int row, int col, int value) const {
