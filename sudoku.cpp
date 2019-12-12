@@ -260,21 +260,33 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
 
     // apply humanistic heuristic
     board.computePossiblesValuesInCells();
-    bool changedElimination, changedLoneRangers, changedTwins, changedTriplets;
+    bool changedElimination = false;
+    bool changedLoneRangers = false;
+    bool changedTwins = false;
+    bool changedTriplets = false;
     do {
         changedElimination = eliminatationStrategy(board);
         if (board.isSolved()) {
             return board;
+        }
+        if (changedElimination) {
+            continue;
         }
 
         changedLoneRangers = lonerangerStrategy(board);
         if (board.isSolved()) {
             return board;
         }
+        if (changedLoneRangers) {
+            continue;
+        }
 
         changedTwins = twinsStrategy(board);
         if (board.isSolved()) {
             return board;
+        }
+        if (changedTwins) {
+            continue;
         }
 
         changedTriplets = tripletsStrategy(board);
