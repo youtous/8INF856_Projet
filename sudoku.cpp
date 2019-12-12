@@ -19,10 +19,6 @@ static int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 1024;
  * How many sub-problems to generate on the worker node when receiving work ?
  */
 static int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
-/**
- * How many threads to use on local computation ?
- */
-static int THREADS_ON_WORKERS = 8;
 
 static int DEBUG = 0;
 
@@ -36,6 +32,16 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
+
+#pragma omp parallel
+    {
+#pragma omp single
+        {
+            std::cout << "[" << processId << "]: Configured to use " << omp_get_num_threads() << " threads."
+                    //  <<std:endl<<  Use 'export OMP_NUM_THREADS=8; mpirun -x OMP_NUM_THREADS ...' to define number of threads."
+                      << std::endl;
+        }
+    }
 
     initSolveMPI();
 
@@ -221,7 +227,7 @@ void initSolveMPI() {
                   << p1Time << " seconds. " << std::endl;
         std::cout.unsetf(std::ios::fixed);
     }
-    if(processId == 0) {
+    if (processId == 0) {
         // end of the work for everyone !
         MPI_Abort(MPI_COMM_WORLD, 0);
     }
@@ -345,8 +351,6 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     }
     // problems is now empty
 
-    omp_set_num_threads(THREADS_ON_WORKERS);
-
     /*
      * The dynamic scheduling type is appropriate when the iterations require different computational costs.
      * This means that the iterations are poorly balanced between each other. The dynamic scheduling type has higher
@@ -356,8 +360,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     int countProblems = subProblems.size();
     bool solutionFound = false;
     std::deque<SudokuBoard> solutions;
-
-#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutions, solutionFound)
+#pragma omp parallel for  schedule(dynamic) shared(countProblems, subProblems, solutions, solutionFound)
     for (int i = 0; i < countProblems; i++) {
         if (solutionFound) {
             // we can't break loop
@@ -384,6 +387,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                       << "}: found a solution, the programm should stop." << std::endl;
         }
     }
+
 
     if (!solutions.empty()) {
         std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: found a solution, returning..."

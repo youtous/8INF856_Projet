@@ -18,8 +18,7 @@ sudoku-cluster: sudoku.o ## Compile then sync sudoku on the cluster
 	./sync.sh
 
 sudoku-cluster-exec: sudoku.o  ## Execute sudoku on the cluster
-	mpiexec --npernode 1 -n 16 $< 0 < puzzles/4_hard.txt
-
+	export OMP_NUM_THREADS=8; mpirun -x OMP_NUM_THREADS --npernode 1 -np 16 $< 0 < puzzles_reference/4.txt
 
 generator.o: generator.cpp ## Compile sequential app
 	$(CC) $< -o $@ $(CFLAGS)
