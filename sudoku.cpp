@@ -394,6 +394,8 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                                       << " threads." << std::endl;
                         }
 
+                        // update existing values
+                        problems[i].recountSolvedCells();
                         SudokuBoard solution = solveBoard(problems[i], solutionFound);
 
                         if (!solution.isEmpty()) {
