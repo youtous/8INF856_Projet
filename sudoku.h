@@ -36,6 +36,11 @@ private:
      * Count how many rows and columns the SudokuBoard is made of.
      */
     int rows, cols;
+
+    /**
+     * Count how many cells are marked as solved.
+     */
+    int countSolvedCells = 0;
 public:
     /**
      * SudokuBoard constructor.
@@ -102,6 +107,28 @@ public:
      * @return - true if the board is empty
      */
     inline bool isEmpty() const { return n == 0; }
+
+    /**
+     * @return - how many cells in the board are solved.
+     */
+    int getCountSolvedCells() const;
+
+    /**
+     * Set how many cells are solved in the board.
+     * @param countSolvedCells
+     */
+    void setCountSolvedCells(int countSolvedCells);
+
+    /**
+     * Count how many cells in the board have a non null value and save it.
+     * @return - how many cells in the board are solved.
+     */
+    int recountSolvedCells();
+
+    /**
+     * @return - true if the board is solved.
+     */
+    bool isSolved() const;
 
     /**
      * Check if a value can be set on a cell.

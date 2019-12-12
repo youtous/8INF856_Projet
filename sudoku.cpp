@@ -581,6 +581,26 @@ std::vector<int> SudokuBoard::getCopyBlock(int cellX, int cellY) const {
 // End of copy data access methods
 
 // Begin data setters methods
+int SudokuBoard::recountSolvedCells() {
+    this->countSolvedCells = 0;
+    for (auto const &e: arrAsLine) {
+        if (e != 0) {
+            this->countSolvedCells += 1;
+        }
+    }
+    return this->countSolvedCells;
+}
+
+bool SudokuBoard::isSolved() const { return this->getCountSolvedCells() == this->getSize(); }
+
+int SudokuBoard::getCountSolvedCells() const {
+    return countSolvedCells;
+}
+
+void SudokuBoard::setCountSolvedCells(int countSolvedCells) {
+    SudokuBoard::countSolvedCells = countSolvedCells;
+}
+
 void SudokuBoard::setRow(int row, std::vector<int> const &rowVector) {
     if (this->cols != rowVector.size()) {
         std::stringstream ss;
