@@ -264,7 +264,7 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
     bool changedLoneRangers = false;
     bool changedTwins = false;
     bool changedTriplets = false;
-    do {
+ /*   do {
         changedElimination = eliminatationStrategy(board);
         if (board.isSolved()) {
             return board;
@@ -293,7 +293,7 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
         if (board.isSolved()) {
             return board;
         }
-    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
+    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets); */
 
 
     // value is valid, continue in to deep search
@@ -483,7 +483,8 @@ bool eliminatationStrategy(SudokuBoard &board) {
         for (int col = 0; col < board.getRowSize(); ++col) {
             if (board[row][col] == 0 &&
                 board.getPossiblesValuesInCells()[row][col].size() == 1) {
-                board[row][col] = board.getPossiblesValuesInCells()[row][col][0];
+                // todo : fix this
+                // board[row][col] = board.getPossiblesValuesInCells()[row][col][0];
                 solvedCells += 1;
             }
             if (solvedCells == board.getSize()) {
