@@ -245,6 +245,13 @@ void initSolveMPI() {
 
 // Begin of Solver methods
 
+SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound) {
+    board.recountSolvedCells();
+    board.computePossiblesValuesInCells();
+
+    return solveBoard(board, solutionFound);
+}
+
 SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col) {
     if (solutionFound) {
         return SudokuBoard(0);
@@ -259,7 +266,6 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
     }
 
     // apply humanistic heuristic
-    board.computePossiblesValuesInCells();
     bool changedElimination = false;
     bool changedLoneRangers = false;
     bool changedTwins = false;
@@ -408,8 +414,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                         }
 
                         // update existing values
-                        problems[i].recountSolvedCells();
-                        SudokuBoard solution = solveBoard(problems[i], solutionFound);
+                        SudokuBoard solution = solveBoardRecursive(problems[i], solutionFound);
 
                         if (!solution.isEmpty()) {
 #pragma omp critical
