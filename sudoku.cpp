@@ -28,17 +28,25 @@ int main(int argc, char *argv[]) {
     int processId;                              /* Process rank */
     int countProcess;                           /* Number of processes */
 
+    if (argc >= 2) {
+        DEBUG = std::atoi(argv[1]);
+    }
+
     // Initialize MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
+
+    if (processId == 0 && DEBUG > DEBUG_BASE) {
+        std::cout << "[" << processId << "]: DEBUG LEVEL = " << DEBUG << std::endl;
+    }
 
 #pragma omp parallel
     {
 #pragma omp single
         {
             std::cout << "[" << processId << "]: Configured to use " << omp_get_num_threads() << " threads."
-                    //  <<std:endl<<  Use 'export OMP_NUM_THREADS=8; mpirun -x OMP_NUM_THREADS ...' to define number of threads."
+                      //  <<std:endl<<  Use 'export OMP_NUM_THREADS=8; mpirun -x OMP_NUM_THREADS ...' to define number of threads."
                       << std::endl;
         }
     }
@@ -360,7 +368,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     int countProblems = subProblems.size();
     bool solutionFound = false;
     std::deque<SudokuBoard> solutions;
-#pragma omp parallel for  schedule(dynamic) shared(countProblems, subProblems, solutions, solutionFound)
+#pragma omp parallel for  shared(countProblems, subProblems, solutions, solutionFound)
     for (int i = 0; i < countProblems; i++) {
         if (solutionFound) {
             // we can't break loop
@@ -371,8 +379,8 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
         subProblems[i].pop_front();
 
         if (DEBUG >= DEBUG_BASE) {
-            std::cout << "[" << processId << "]: solved a board (" << subProblems[i].size()
-                      << " left) on problem {" << i << "} over " << omp_get_num_threads()
+            std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: solving a board on problem {" << i
+                      << "} over " << omp_get_num_threads()
                       << " threads." << std::endl;
         }
 
