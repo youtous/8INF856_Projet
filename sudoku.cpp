@@ -45,8 +45,9 @@ int main(int argc, char *argv[]) {
     {
 #pragma omp single
         {
-            std::cout << "[" << processId << "]: Configured to use " << omp_get_num_threads() << " threads."
-                      //  <<std:endl<<  Use 'export OMP_NUM_THREADS=8; mpirun -x OMP_NUM_THREADS ...' to define number of threads."
+            std::cout << "[" << processId << "]: Configured to use " << omp_get_num_threads() << " threads, "
+                      << omp_get_num_procs() << " cores available."
+                      //  <<std:endl<<  "Use 'export OMP_NUM_THREADS=8; mpirun -x OMP_NUM_THREADS ...' to define number of threads."
                       << std::endl;
         }
     }
