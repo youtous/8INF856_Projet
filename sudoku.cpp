@@ -245,7 +245,7 @@ void initSolveMPI() {
 
 // Begin of Solver methods
 
-SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col) {
+SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col) {
     if (solutionFound) {
         return SudokuBoard(0);
     }
@@ -257,6 +257,30 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         // the board is solved, return it
         return SudokuBoard(board);
     }
+
+    // apply humanistic heuristic
+    bool changedElimination, changedLoneRangers, changedTwins, changedTriplets;
+    do {
+        changedElimination = eliminatationStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+
+        changedLoneRangers = lonerangerStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+
+        changedTwins = twinsStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+
+        changedTriplets = tripletsStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
 
 
     // value is valid, continue in to deep search
@@ -272,11 +296,11 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
 
             // compute next cell
             SudokuBoard solution = solveBoard(board, solutionFound, nextRow, nextCol);
-            board[row][col] = oValue;
             // if solution has been found, return recursion
             if (!solution.isEmpty()) {
                 return solution;
             }
+            board[row][col] = oValue;
         }
     }
     return SudokuBoard(0);
@@ -438,6 +462,21 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
     return true;
 }
 
+bool eliminatationStrategy(SudokuBoard &board) {
+    return false;
+}
+
+bool lonerangerStrategy(SudokuBoard &board) {
+    return false;
+}
+
+bool twinsStrategy(SudokuBoard &board) {
+    return false;
+}
+
+bool tripletsStrategy(SudokuBoard &board) {
+    return false;
+}
 // End of Solver methods
 
 SudokuBoard::SudokuBoard(int n) : arrAsLine(std::vector<int>(n * n * n * n)), n(n), rows(n * n), cols(n * n) {};

@@ -412,7 +412,7 @@ void writeInFile(std::string const &fileName, std::string const &contentFile);
  * @param col - (optional) the column of the cell to work on
  * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
-SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row = 0, int col = 0);
+SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row = 0, int col = 0);
 
 /**
  * Generate possibilities for the next empty cell of the front board to work.
@@ -436,6 +436,34 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
  * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
 SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems);
+
+/**
+ * Apply elimination strategy on the SudokuBoard.
+ * @param board - the board.
+ * @return - true if a change was made, false otherwise.
+ */
+bool eliminatationStrategy(SudokuBoard &board);
+
+/**
+ * Apply lone ranger strategy on the SudokuBoard.
+ * @param board - the board.
+ * @return - true if a change was made, false otherwise.
+ */
+bool lonerangerStrategy(SudokuBoard &board);
+
+/**
+ * Apply twins strategy on the SudokuBoard.
+ * @param board - the board.
+ * @return - true if a change was made, false otherwise.
+ */
+bool twinsStrategy(SudokuBoard &board);
+
+/**
+ * Apply triplets strategy on the SudokuBoard.
+ * @param board - the board.
+ * @return - true if a change was made, false otherwise.
+ */
+bool tripletsStrategy(SudokuBoard &board);
 
 /**
  * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.
