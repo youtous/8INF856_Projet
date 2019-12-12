@@ -259,6 +259,7 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
     }
 
     // apply humanistic heuristic
+    board.computePossiblesValuesInCells();
     bool changedElimination, changedLoneRangers, changedTwins, changedTriplets;
     do {
         changedElimination = eliminatationStrategy(board);
@@ -465,7 +466,26 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
 }
 
 bool eliminatationStrategy(SudokuBoard &board) {
-    return false;
+    int solvedCells = board.getCountSolvedCells();
+    for (int row = 0; row < board.getColumnSize(); ++row) {
+        for (int col = 0; col < board.getRowSize(); ++col) {
+            if (board[row][col] == 0 &&
+                board.getPossiblesValuesInCells()[row][col].size() == 1) {
+                board[row][col] = board.getPossiblesValuesInCells()[row][col][0];
+                solvedCells += 1;
+            }
+            if (solvedCells == board.getSize()) {
+                break;
+            }
+        }
+        if (solvedCells == board.getSize()) {
+            break;
+        }
+    }
+
+    bool changed = board.getCountSolvedCells() != solvedCells;
+    board.setCountSolvedCells(solvedCells);
+    return changed;
 }
 
 bool lonerangerStrategy(SudokuBoard &board) {
@@ -591,6 +611,14 @@ int SudokuBoard::getStartingRowBlockOfCell(int row) const {
 int SudokuBoard::getStartingColBlockOfCell(int col) const {
     return getBlockColOf(col) * this->n;
 }
+
+std::vector<std::vector<std::vector<int>>> &SudokuBoard::getPossiblesValuesInCells() {
+    return this->possiblesValuesInCells;
+}
+
+std::vector<std::vector<std::vector<int>>> const &SudokuBoard::getPossiblesValuesInCells() const {
+    return this->possiblesValuesInCells;
+}
 // End of data access methods
 
 // Copy data access methods
@@ -630,6 +658,21 @@ int SudokuBoard::recountSolvedCells() {
         }
     }
     return this->countSolvedCells;
+}
+
+void SudokuBoard::computePossiblesValuesInCells() {
+    this->possiblesValuesInCells.clear();
+    // todo : eventually optimize
+    this->possiblesValuesInCells.resize(getRowSize(), std::vector<std::vector<int>>(getColumnSize()));
+    for (int row = 0; row < getRowSize(); ++row) {
+        for (int col = 0; col < getColumnSize(); ++col) {
+            for (int value = 0; value < getBlockSize(); ++value) {
+                if (testValueInCell(row, col, value)) {
+                    this->possiblesValuesInCells[row][col].push_back(value);
+                }
+            }
+        }
+    }
 }
 
 bool SudokuBoard::isSolved() const { return this->getCountSolvedCells() == this->getSize(); }

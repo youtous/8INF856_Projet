@@ -41,6 +41,11 @@ private:
      * Count how many cells are marked as solved.
      */
     int countSolvedCells = 0;
+
+    /**
+     * Store possibles values in each cell.
+     */
+    std::vector<std::vector<std::vector<int>>> possiblesValuesInCells;
 public:
     /**
      * SudokuBoard constructor.
@@ -124,6 +129,21 @@ public:
      * @return - how many cells in the board are solved.
      */
     int recountSolvedCells();
+
+    /**
+     * Computes possibles values in each cell.
+     */
+    void computePossiblesValuesInCells();
+
+    /**
+     * @return - mapping of each possible values in each cell.
+     */
+    std::vector<std::vector<std::vector<int>>> &getPossiblesValuesInCells();
+
+    /**
+     * @return - mapping of each possible values in each cell.
+     */
+    std::vector<std::vector<std::vector<int>>> const &getPossiblesValuesInCells() const;
 
     /**
      * @return - true if the board is solved.
