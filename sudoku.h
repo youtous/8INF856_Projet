@@ -201,6 +201,15 @@ public:
     bool testValueInCell(int row, int col, int value) const;
 
     /**
+     * Check if a value can be set on a cell using computed available values.
+     * @param row - row of the cell
+     * @param col - column of the cell
+     * @param value - value wanted
+     * @return true if the value can be set, false otherwise
+     */
+    bool testValueInCellFromCompute(int row, int col, int value) const;
+
+    /**
      * @param i - row index
      * @complexity - O(n) where n = number of columns
      * @return - a copy of the row

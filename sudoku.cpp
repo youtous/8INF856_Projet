@@ -440,6 +440,32 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     return SudokuBoard(0);
 }
 
+bool SudokuBoard::testValueInCellFromCompute(int row, int col, int value) const {
+    // same value
+    if (this->get(row, col) == value) {
+        return true;
+    }
+    // value already exists
+    if (this->get(row, col) != 0) {
+        return false;
+    }
+
+    if (possiblesValuesInRows[row].find(value) == possiblesValuesInRows[row].end()) {
+        // not found
+        return false;
+    }
+    if (possiblesValuesInColumns[col].find(value) == possiblesValuesInColumns[col].end()) {
+        // not found
+        return false;
+    }
+    if (possiblesValuesInBlocks[getBlockOfCell(row, col)].find(value) ==
+        possiblesValuesInBlocks[getBlockOfCell(row, col)].end()) {
+        // not found
+        return false;
+    }
+    return true;
+}
+
 bool SudokuBoard::testValueInCell(int row, int col, int value) const {
     // same value
     if (this->get(row, col) == value) {
