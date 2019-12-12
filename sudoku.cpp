@@ -350,12 +350,11 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     if (DEBUG >= DEBUG_BASE) {
         std::cout << "[" << processId << "]: generated " << problems.size() << " problem boards to check." << std::endl;
     }
-// http://pages.tacc.utexas.edu/~eijkhout/pcse/html/omp-task.html#Tasksynchronizationq
 
     bool solutionFound = false;
     std::deque<SudokuBoard> solutions;
 // creating tasks pool
-#pragma omp parallel
+#pragma omp parallel shared(solutionFound, solutions, problems)
     {
 #pragma omp single nowait
         {
@@ -371,19 +370,18 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                                       << " threads." << std::endl;
                         }
 
-                    }
+                        SudokuBoard solution = solveBoard(problems[i], solutionFound);
 
-                    SudokuBoard solution = solveBoard(problems[i], solutionFound);
-
-                    if (!solution.isEmpty()) {
+                        if (!solution.isEmpty()) {
 #pragma omp critical
-                        {
-                            // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
-                            solutionFound = true;
-                            solutions.emplace_back(std::move(solution));
+                            {
+                                // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
+                                solutionFound = true;
+                                solutions.emplace_back(std::move(solution));
+                            }
+                            std::cout << "[" << processId << "]{" << omp_get_thread_num()
+                                      << "}: found a solution, the programm should stop." << std::endl;
                         }
-                        std::cout << "[" << processId << "]{" << omp_get_thread_num()
-                                  << "}: found a solution, the programm should stop." << std::endl;
                     }
                 }
             }
