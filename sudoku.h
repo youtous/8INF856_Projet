@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <deque>
 #include <utility>
+#include <set>
 
 #define CUSTOM_MPI_SOLUTIONS_TAG            10
 #define CUSTOM_MPI_POSSIBILITIES_TAG            11
@@ -45,7 +46,19 @@ private:
     /**
      * Store possibles values in each cell.
      */
-    std::vector<std::vector<std::vector<int>>> possiblesValuesInCells;
+    std::vector<std::vector<std::set<int>>> possiblesValuesInCells;
+    /**
+    * Store possibles values in each row.
+    */
+    std::vector<std::set<int>> possiblesValuesInRows;
+    /**
+    * Store possibles values in each column.
+    */
+    std::vector<std::set<int>> possiblesValuesInColumns;
+    /**
+    * Store possibles values in each block.
+    */
+    std::vector<std::set<int>> possiblesValuesInBlocks;
 public:
     /**
      * SudokuBoard constructor.
@@ -138,12 +151,40 @@ public:
     /**
      * @return - mapping of each possible values in each cell.
      */
-    std::vector<std::vector<std::vector<int>>> &getPossiblesValuesInCells();
+    std::vector<std::vector<std::set<int>>> &getPossiblesValuesInCells();
 
     /**
      * @return - mapping of each possible values in each cell.
      */
-    std::vector<std::vector<std::vector<int>>> const &getPossiblesValuesInCells() const;
+    std::vector<std::vector<std::set<int>>> const &getPossiblesValuesInCells() const;
+
+    /**
+     * @return - mapping of each possible values in each row.
+     */
+    std::vector<std::set<int>> const &getPossiblesValuesInRows() const;
+
+    /**
+     * @return - mapping of each possible values in each row.
+     */
+    std::vector<std::set<int>> &getPossiblesValuesInRows();
+    /**
+     * @return - mapping of each possible values in each column.
+     */
+    std::vector<std::set<int>> const &getPossiblesValuesInColumns() const;
+
+    /**
+     * @return - mapping of each possible values in each column.
+     */
+    std::vector<std::set<int>> &getPossiblesValuesInColumns();
+    /**
+     * @return - mapping of each possible values in each block.
+     */
+    std::vector<std::set<int>> const &getPossiblesValuesInBlocks() const;
+
+    /**
+     * @return - mapping of each possible values in each block.
+     */
+    std::vector<std::set<int>> &getPossiblesValuesInBlocks();
 
     /**
      * @return - true if the board is solved.
@@ -180,6 +221,13 @@ public:
     * @return - a copy of the block
     */
     std::vector<int> getCopyBlock(int cellX, int cellY) const;
+
+    /**
+     * @param row - row of the cell
+     * @param col - col of the cell
+     * @return - the index of the block
+     */
+    int getBlockOfCell(int row, int col) const;
 
     /**
      * @param row - row of the cell

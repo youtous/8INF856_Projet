@@ -596,6 +596,10 @@ std::pair<int, int> SudokuBoard::nextEmptyCell() const {
     return {-1, -1};
 }
 
+int SudokuBoard::getBlockOfCell(int row, int col) const {
+    return getBlockRowOf(row) * this->n + getBlockColOf(col);
+}
+
 int SudokuBoard::getBlockRowOf(int row) const {
     return row / this->n;
 }
@@ -612,12 +616,37 @@ int SudokuBoard::getStartingColBlockOfCell(int col) const {
     return getBlockColOf(col) * this->n;
 }
 
-std::vector<std::vector<std::vector<int>>> &SudokuBoard::getPossiblesValuesInCells() {
+std::vector<std::vector<std::set<int>>> &SudokuBoard::getPossiblesValuesInCells() {
     return this->possiblesValuesInCells;
 }
 
-std::vector<std::vector<std::vector<int>>> const &SudokuBoard::getPossiblesValuesInCells() const {
+std::vector<std::vector<std::set<int>>> const &SudokuBoard::getPossiblesValuesInCells() const {
     return this->possiblesValuesInCells;
+}
+
+std::vector<std::set<int>> const &SudokuBoard::getPossiblesValuesInRows() const {
+    return this->possiblesValuesInRows;
+}
+
+std::vector<std::set<int>> &SudokuBoard::getPossiblesValuesInRows() {
+    return this->possiblesValuesInRows;
+}
+
+std::vector<std::set<int>> const &SudokuBoard::getPossiblesValuesInColumns() const {
+    return this->possiblesValuesInColumns;
+}
+
+std::vector<std::set<int>> &SudokuBoard::getPossiblesValuesInColumns() {
+    return this->possiblesValuesInColumns;
+
+}
+
+std::vector<std::set<int>> const &SudokuBoard::getPossiblesValuesInBlocks() const {
+    return this->possiblesValuesInBlocks;
+}
+
+std::vector<std::set<int>> &SudokuBoard::getPossiblesValuesInBlocks() {
+    return this->possiblesValuesInBlocks;
 }
 // End of data access methods
 
@@ -662,13 +691,30 @@ int SudokuBoard::recountSolvedCells() {
 
 void SudokuBoard::computePossiblesValuesInCells() {
     this->possiblesValuesInCells.clear();
-    // todo : eventually optimize
-    this->possiblesValuesInCells.resize(getRowSize(), std::vector<std::vector<int>>(getColumnSize()));
+
+    std::set<int> possiblesValues;
+    for (int i = 1; i <= this->getRowSize(); ++i) {
+        possiblesValues.insert(i);
+    }
+
+    this->possiblesValuesInColumns.resize(getRowSize(), possiblesValues);
+    this->possiblesValuesInRows.resize(getColumnSize(), possiblesValues);
+    this->possiblesValuesInBlocks.resize(getBlockSize(), possiblesValues);
+    this->possiblesValuesInCells.resize(getRowSize(), std::vector<std::set<int>>(getColumnSize()));
+
     for (int row = 0; row < getRowSize(); ++row) {
         for (int col = 0; col < getColumnSize(); ++col) {
-            for (int value = 0; value < getBlockSize(); ++value) {
-                if (testValueInCell(row, col, value)) {
-                    this->possiblesValuesInCells[row][col].push_back(value);
+            // value already set
+            if(this->get(row, col) != 0) {
+                possiblesValuesInBlocks[getBlockOfCell(row, col)].erase(this->get(row, col));
+                possiblesValuesInRows[row].erase(this->get(row, col));
+                possiblesValuesInColumns[col].erase(this->get(row, col));
+            } else {
+                // test with values
+                for (int value = 0; value < getBlockSize(); ++value) {
+                    if (testValueInCell(row, col, value)) {
+                        this->possiblesValuesInCells[row][col].insert(value);
+                    }
                 }
             }
         }
