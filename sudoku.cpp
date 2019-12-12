@@ -270,7 +270,7 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
     bool changedLoneRangers = false;
     bool changedTwins = false;
     bool changedTriplets = false;
- /*   do {
+    do {
         changedElimination = eliminatationStrategy(board);
         if (board.isSolved()) {
             return board;
@@ -299,7 +299,9 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
         if (board.isSolved()) {
             return board;
         }
-    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets); */
+    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
+
+    // todo : if changed, find next cell
 
 
     // value is valid, continue in to deep search
@@ -749,7 +751,7 @@ void SudokuBoard::computePossiblesValuesInCells() {
     for (int row = 0; row < getRowSize(); ++row) {
         for (int col = 0; col < getColumnSize(); ++col) {
             // value already set
-            if(this->get(row, col) != 0) {
+            if (this->get(row, col) != 0) {
                 possiblesValuesInBlocks[getBlockOfCell(row, col)].erase(this->get(row, col));
                 possiblesValuesInRows[row].erase(this->get(row, col));
                 possiblesValuesInColumns[col].erase(this->get(row, col));
@@ -772,7 +774,7 @@ int SudokuBoard::getCountSolvedCells() const {
 }
 
 void SudokuBoard::setCountSolvedCells(int countSolvedCells) {
-    SudokuBoard::countSolvedCells = countSolvedCells;
+    this->countSolvedCells = countSolvedCells;
 }
 
 void SudokuBoard::setRow(int row, std::vector<int> const &rowVector) {
