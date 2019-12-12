@@ -350,54 +350,45 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     if (DEBUG >= DEBUG_BASE) {
         std::cout << "[" << processId << "]: generated " << problems.size() << " problem boards to check." << std::endl;
     }
+// http://pages.tacc.utexas.edu/~eijkhout/pcse/html/omp-task.html#Tasksynchronizationq
 
-    // for each problem, associate a dequeue of sultions
-    std::vector<std::deque<SudokuBoard> > subProblems(problems.size());
-
-    // split the problems in sub-problems in previous vector
-    for (auto &subProblem : subProblems) {
-        subProblem.emplace_back(std::move(problems.front()));
-        problems.pop_front();
-    }
-    // problems is now empty
-
-    /*
-     * The dynamic scheduling type is appropriate when the iterations require different computational costs.
-     * This means that the iterations are poorly balanced between each other. The dynamic scheduling type has higher
-     * overhead then the static scheduling type because it dynamically distributes the iterations during the runtime.
-     */
-    // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
-    int countProblems = subProblems.size();
     bool solutionFound = false;
     std::deque<SudokuBoard> solutions;
-#pragma omp parallel for  shared(countProblems, subProblems, solutions, solutionFound)
-    for (int i = 0; i < countProblems; i++) {
-        if (solutionFound) {
-            // we can't break loop
-            // std::cout << "[" << processId << "]{" << omp_get_thread_num() << "} skipping loop..." << std::endl;
-            continue;
-        }
-        SudokuBoard solution = solveBoard(subProblems[i].front(), solutionFound);
-        subProblems[i].pop_front();
+// creating tasks pool
+#pragma omp parallel
+    {
+#pragma omp single nowait
+        {
+            for (int i = 0; i < problems.size(); ++i) {
+#pragma omp task
+                {
+                    if (!solutionFound) {
+                        // we can't break loop :( beurk OpenMP 3, vive OpenMP 5
 
-        if (DEBUG >= DEBUG_BASE) {
-            std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: solving a board on problem {" << i
-                      << "} over " << omp_get_num_threads()
-                      << " threads." << std::endl;
-        }
+                        if (DEBUG >= DEBUG_BASE) {
+                            std::cout << "[" << processId << "]{" << omp_get_thread_num()
+                                      << "}: solving a board on problem over " << omp_get_num_threads()
+                                      << " threads." << std::endl;
+                        }
 
-        if (!solution.isEmpty()) {
+                    }
+
+                    SudokuBoard solution = solveBoard(problems[i], solutionFound);
+
+                    if (!solution.isEmpty()) {
 #pragma omp critical
-            {
-                // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
-                solutionFound = true;
-                solutions.emplace_back(std::move(solution));
+                        {
+                            // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
+                            solutionFound = true;
+                            solutions.emplace_back(std::move(solution));
+                        }
+                        std::cout << "[" << processId << "]{" << omp_get_thread_num()
+                                  << "}: found a solution, the programm should stop." << std::endl;
+                    }
+                }
             }
-            std::cout << "[" << processId << "]{" << omp_get_thread_num()
-                      << "}: found a solution, the programm should stop." << std::endl;
         }
     }
-    delete foundSolution;
 
 
     if (!solutions.empty()) {
