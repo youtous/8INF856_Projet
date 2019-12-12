@@ -303,7 +303,7 @@ SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col)
     int oValue = board[row][col];
     // try all possible numbers in the cell
     for (int i = 1; i <= board.getBlockSize(); ++i) {
-        if (board.testValueInCell(row, col, i)) {
+        if (board.testValueInCellFromCompute(row, col, i)) {
             // set the value
             board[row][col] = i;
 
