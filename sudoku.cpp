@@ -19,10 +19,6 @@ static int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 512;
  * How many sub-problems to generate on the worker node when receiving work ?
  */
 static int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
-/**
- * How many threads to use on local computation ?
- */
-static int THREADS_ON_WORKERS = 8;
 
 static int DEBUG = 0;
 
@@ -32,28 +28,30 @@ int main(int argc, char *argv[]) {
     int processId;                              /* Process rank */
     int countProcess;                           /* Number of processes */
 
+    if (argc >= 2) {
+        DEBUG = std::atoi(argv[1]);
+    }
+
     // Initialize MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
-    // exec timing
-    double p1TotalTime = 0;
-    double p1Time = -MPI_Wtime();
+    if (processId == 0 && DEBUG > DEBUG_BASE) {
+        std::cout << "[" << processId << "]: DEBUG LEVEL = " << DEBUG << std::endl;
+    }
+
+#pragma omp parallel
+    {
+#pragma omp single
+        {
+            std::cout << "[" << processId << "]: Configured to use " << omp_get_num_threads() << " threads."
+                      //  <<std:endl<<  Use 'export OMP_NUM_THREADS=8; mpirun -x OMP_NUM_THREADS ...' to define number of threads."
+                      << std::endl;
+        }
+    }
 
     initSolveMPI();
-
-    // finish timing
-    MPI_Barrier(MPI_COMM_WORLD);
-    p1Time += MPI_Wtime();
-    MPI_Reduce(&p1Time, &p1TotalTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    if (processId == 0) {
-        std::cout << std::fixed;
-        std::cout << "Process [" << processId << "] : sudoku solving puzzle " << " on " << countProcess
-                  << " processes took: "
-                  << p1TotalTime << " seconds. " << std::endl;
-        std::cout.unsetf(std::ios::fixed);
-    }
 
     MPI_Finalize();
     return 0;
@@ -71,6 +69,9 @@ void initSolveMPI() {
 
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
+
+    // exec timing
+    double p1Time = -MPI_Wtime();
 
     // init sudoku solving on master
     // compute first boards to investigate
@@ -109,6 +110,7 @@ void initSolveMPI() {
     // the worker who found the solution
     int firstWinnerWorker = -1;
     // balance load dynamically between processes
+    int successWorkerId = -1;
     if (processId == 0) {
         MPI_Status idleRequestStatus;
         // master process opens idle requests from workers
@@ -130,27 +132,31 @@ void initSolveMPI() {
 
                 // worker is idle ! send it some work
                 if (idleResponse) {
+                    // check if the worker has finished ?
                     if (countSolutionsFoundOnProcess[workerId - 1] > 0) {
                         // a worker has found a solution, remove remaining problem boards
+                        successWorkerId = workerId;
                         std::cout << "[" << processId << "]: " << workerId << " just found a solution !" << std::endl;
+                        // empty working queue then finish
                         std::deque<SudokuBoard> empty;
                         std::swap(problemBoards, empty);
-                        firstWinnerWorker = workerId;
+                        break;
+                    } else {
+                        // otherwise, send it some work
+                        if (DEBUG >= DEBUG_BASE) {
+                            std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
+                                      << std::endl;
+                        }
+                        std::cout << "\r[" << processId << "]: Dispatching ";
+                        std::cout << initialProblemsSize - problemBoards.size() << "/" << initialProblemsSize
+                                  << std::flush;
+                        std::cout << " problems boards between workers.";
+
+                        sendAndConsumeDeque(problemBoards, workerId, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 1);
+                        MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId,
+                                  CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
+                                  (workersRequests.data() + workerId - 1));
                     }
-
-
-                    if (DEBUG >= DEBUG_BASE) {
-                        std::cout << "[" << processId << "]: sending 1 problem board to process[" << workerId << "]"
-                                  << std::endl;
-                    }
-                    std::cout << "\r[" << processId << "]: Dispatching ";
-                    std::cout << initialProblemsSize - problemBoards.size() << "/" << initialProblemsSize << std::flush;
-                    std::cout << " problems boards between workers.";
-
-                    sendAndConsumeDeque(problemBoards, workerId, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 1);
-                    MPI_Irecv(countSolutionsFoundOnProcess.data() + workerId - 1, 1, MPI_INT, workerId,
-                              CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD,
-                              (workersRequests.data() + workerId - 1));
                 }
             }
         }
@@ -158,24 +164,6 @@ void initSolveMPI() {
 
         if (DEBUG >= DEBUG_BASE) {
             std::cout << "[" << processId << "]: all problem boards have been computed!" << std::endl;
-        }
-
-        // liberate workers from awaiting work loop
-        int responseWorkerId;
-        std::vector<MPI_Request> workersRequestsStop(countProcess - 1);
-        for (int workerId = 1; workerId < countProcess; ++workerId) {
-            // skip for winner worker
-            if (firstWinnerWorker != -1 && workerId == firstWinnerWorker) {
-                continue;
-            }
-
-            // send end of work signal
-            MPI_Isend(nullptr, 0, MPI_INT, workerId, CUSTOM_MPI_STOP_WORK_TAG, MPI_COMM_WORLD,
-                      workersRequestsStop.data() + workerId - 1);
-
-            // wait any idle response and indicate end of work to the worker
-            MPI_Waitany(countProcess - 1, workersRequests.data(), &responseWorkerId, &idleRequestStatus);
-            sendAndConsumeDeque(problemBoards, responseWorkerId + 1, CUSTOM_MPI_POSSIBILITIES_TAG, MPI_COMM_WORLD, 0);
         }
     } else {
         unsigned int processLoad = 0;
@@ -192,6 +180,7 @@ void initSolveMPI() {
             // wait work from master
             int countReceivedBoards = receivePushBackDeque(problemBoards, 0, CUSTOM_MPI_POSSIBILITIES_TAG,
                                                            MPI_COMM_WORLD);
+            processLoad += countReceivedBoards;
 
             if (countReceivedBoards > 0) {
                 SudokuBoard solution = solveProblemsOnNode(problemBoards);
@@ -202,11 +191,14 @@ void initSolveMPI() {
                         std::cout << "[" << processId << "]: a solution has been found :" << std::endl
                                   << solution << std::endl;
                     }
-                    // receive empty problems as ACK
+                    // mark current process as winner and inform master process, then finish
+                    successWorkerId = processId;
+                    countSolutions = solutionBoards.size();
+                    MPI_Isend(&countSolutions, 1, MPI_INT, 0, CUSTOM_MPI_IDLE_TAG, MPI_COMM_WORLD, &workerRequestIdle);
+                    break;
                 }
-                processLoad += countReceivedBoards;
             } else {
-                // end of the work
+                // end of the work, no more board to compute
                 break;
             }
         } while (true);
@@ -218,38 +210,44 @@ void initSolveMPI() {
 
     // collect results
     if (processId == 0) {
-        if (firstWinnerWorker != -1) {
-            int countReceivedSolutions = receivePushBackDeque(solutionBoards, firstWinnerWorker,
-                                                              CUSTOM_MPI_SOLUTIONS_TAG,
-                                                              MPI_COMM_WORLD);
-            if (countReceivedSolutions > 0) {
-                std::cout << "[" << processId << "]: Worker[" << firstWinnerWorker << "] found "
-                          << countReceivedSolutions
-                          << " solution(s)." << std::endl;
-
-            }
-
+        if (successWorkerId != -1) {
+            receivePushBackDeque(solutionBoards, successWorkerId, CUSTOM_MPI_SOLUTIONS_TAG,
+                                 MPI_COMM_WORLD);
+            std::cout << "[" << processId << "]: Worker[" << successWorkerId << "] found a solution." << std::endl;
+            std::cout << "[" << processId << "] Solution for board:" << std::endl << solutionBoards.front()
+                      << std::endl;
+        } else {
+            std::cout << "[" << processId << "] No solution found for the board." << std::endl;
         }
-        std::cout << "[" << processId << "]: All results from workers have been collected : " << solutionBoards.size()
-                  << ", solutions found!" << std::endl;
-        for (auto const &solution : solutionBoards) {
-            std::cout << "Solution for board:" << std::endl << solution << std::endl << std::endl;
-        }
-    } else {
+    }
+    if (successWorkerId == processId) {
         // send results to master
         if (processId == firstWinnerWorker) {
             sendAndConsumeDeque(solutionBoards, 0, CUSTOM_MPI_SOLUTIONS_TAG, MPI_COMM_WORLD);
         }
     }
+
+    // finish timing
+    p1Time += MPI_Wtime();
+    if (processId == 0) {
+        std::cout << std::fixed;
+        std::cout << "Process [" << processId << "] : sudoku solving puzzle " << " on " << countProcess
+                  << " processes took: "
+                  << p1Time << " seconds. " << std::endl;
+        std::cout.unsetf(std::ios::fixed);
+    }
+    if (processId == 0) {
+        // end of the work for everyone !
+        MPI_Abort(MPI_COMM_WORLD, 0);
+    }
 }
 
 // Begin of Solver methods
 
-SudokuBoard solveBoard(SudokuBoard &board, bool *stopFlag, int row, int col) {
-    if (*stopFlag) {
+SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col) {
+    if (solutionFound) {
         return SudokuBoard(0);
     }
-
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
@@ -272,7 +270,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool *stopFlag, int row, int col) {
             board[row][col] = i;
 
             // compute next cell
-            SudokuBoard solution = solveBoard(board, stopFlag, nextRow, nextCol);
+            SudokuBoard solution = solveBoard(board, solutionFound, nextRow, nextCol);
             board[row][col] = oValue;
             // if solution has been found, return recursion
             if (!solution.isEmpty()) {
@@ -362,8 +360,6 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     }
     // problems is now empty
 
-    omp_set_num_threads(THREADS_ON_WORKERS);
-
     /*
      * The dynamic scheduling type is appropriate when the iterations require different computational costs.
      * This means that the iterations are poorly balanced between each other. The dynamic scheduling type has higher
@@ -371,55 +367,41 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
      */
     // see http://jakascorner.com/blog/2016/06/omp-for-scheduling.html
     int countProblems = subProblems.size();
-    bool *foundSolution = new bool(false);
+    bool solutionFound = false;
     std::deque<SudokuBoard> solutions;
-
-#pragma omp parallel for  schedule(dynamic)  shared(countProblems, subProblems, solutions, foundSolution)
+#pragma omp parallel for  shared(countProblems, subProblems, solutions, solutionFound)
     for (int i = 0; i < countProblems; i++) {
-        if (*foundSolution) {
+        if (solutionFound) {
             // we can't break loop
+            // std::cout << "[" << processId << "]{" << omp_get_thread_num() << "} skipping loop..." << std::endl;
             continue;
         }
-        MPI_Status status;
-        int stopFromMaster;
-        MPI_Iprobe(0, CUSTOM_MPI_STOP_WORK_TAG, MPI_COMM_WORLD, &stopFromMaster, &status);
-        if (stopFromMaster) {
-#pragma omp critical
-            {
-                *foundSolution = true;
-            }
-            continue;
-        }
-
-
-        SudokuBoard solution = solveBoard(subProblems[i].front(), foundSolution, processId);
+        SudokuBoard solution = solveBoard(subProblems[i].front(), solutionFound);
         subProblems[i].pop_front();
 
         if (DEBUG >= DEBUG_BASE) {
-            std::cout << "[" << processId << "]: solved a board (" << subProblems[i].size()
-                      << " left) on problem {" << i << "} over " << omp_get_num_threads()
+            std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: solving a board on problem {" << i
+                      << "} over " << omp_get_num_threads()
                       << " threads." << std::endl;
         }
 
         if (!solution.isEmpty()) {
 #pragma omp critical
             {
-                if (!*foundSolution) {
-                    // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
-                    *foundSolution = true;
-                    solutions.emplace_back(std::move(solution));
-                    if (DEBUG >= DEBUG_BASE) {
-
-                    }
-                    std::cout << "[" << processId << "]: found a solution :" << solutions.front() << std::endl;
-                }
-
+                // see : http://jakascorner.com/blog/2016/08/omp-cancel.html
+                solutionFound = true;
+                solutions.emplace_back(std::move(solution));
             }
+            std::cout << "[" << processId << "]{" << omp_get_thread_num()
+                      << "}: found a solution, the programm should stop." << std::endl;
         }
     }
     delete foundSolution;
 
+
     if (!solutions.empty()) {
+        std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: found a solution, returning..."
+                  << std::endl;
         return solutions.front();
     }
 
