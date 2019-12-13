@@ -19,6 +19,7 @@
 - How to generate a grid : https://stackoverflow.com/questions/4066075/proper-data-structure-to-represent-a-sudoku-puzzle
 
 - Humanistic vs Bruteforce solver ; https://www.andrew.cmu.edu/user/astian/
+- Crook algorithm : https://github.com/maijoshi/ParaSudoku/blob/master/crook.cpp
 - Bruteforce implementation : https://github.com/hecrj/par/blob/master/lab4/sudoku.c
 
 todo : check this https://github.com/pranjalmaheshwari/sudokuSolver/blob/master/sudoku.c, 
