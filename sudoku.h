@@ -187,6 +187,7 @@ public:
      * @return - mapping of each possible values in each row.
      */
     std::vector<std::set<int>> &getPossiblesValuesInRows();
+
     /**
      * @return - mapping of each possible values in each column.
      */
@@ -196,6 +197,7 @@ public:
      * @return - mapping of each possible values in each column.
      */
     std::vector<std::set<int>> &getPossiblesValuesInColumns();
+
     /**
      * @return - mapping of each possible values in each block.
      */
@@ -214,6 +216,7 @@ public:
      * @param value - value between 1 and getBlockSize
      */
     void addPossibleValueForCell(int row, int col, int value);
+
     /**
      * Remove a possible value for a given cell.
      * @param row - row of the cell
@@ -531,6 +534,7 @@ void writeInFile(std::string const &fileName, std::string const &contentFile);
  * This function init board computation for solveBoard.
  *
  * @param board - the board to solve
+ * @param solutionFound - a flag used to stop recursion
  * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
 SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound);
@@ -542,11 +546,23 @@ SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound);
  *
  *
  * @param board - the board to solve
+ * @param solutionFound - a flag used to stop recursion
  * @param row - (optional) the row of the cell to work on
  * @param col - (optional) the column of the cell to work on
  * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
 SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row = 0, int col = 0);
+
+/**
+ * Solve a given SudokuBoard using Crook's algorithm.
+ *
+ * @param board - the board to solve
+ * @param solutionFound - a flag used to stop recursion
+ * @param row - (optional) the row of the cell to work on
+ * @param col - (optional) the column of the cell to work on
+ * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
+ */
+SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound);
 
 /**
  * Generate possibilities for the next empty cell of the front board to work.

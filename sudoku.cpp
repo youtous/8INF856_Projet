@@ -267,12 +267,49 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         return board;
     }
 
+    SudokuBoard solution = solveReduceCrook(board, solutionFound);
+    if(!solution.isEmpty()) {
+        return solution;
+    }
+
+    // next cell values
+    bool jumpRow = (col + 1) >= board.getRowSize();
+    int nextRow = row + (jumpRow ? 1 : 0);
+    int nextCol = jumpRow ? 0 : col + 1;
+
+    // add the current value of the cell in order to propagate
+    if (board[row][col] != 0) {
+        board.addPossibleValueForCell(row, col, board[row][col]);
+    }
+
+    // cell not solved, try all possible numbers in the cell
+    // value is valid, continue in to deep search
+    for (int possibleValue :board.getPossiblesValuesInCells()[row][col]) {
+        SudokuBoard copyBoard = board;
+
+        // set the value
+        copyBoard.setValueAndUpdatePossibilities(row, col, possibleValue);
+
+        SudokuBoard solution = solveBoard(copyBoard, solutionFound, nextRow, nextCol);
+        // if solution has been found, return recursion
+        if (!solution.isEmpty()) {
+            return solution;
+        }
+    }
+
+    return SudokuBoard(0);
+}
+
+SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
     // apply humanistic heuristic
     int changedElimination = 0;
     int changedLoneRangers = 0;
     int changedTwins = 0;
     int changedTriplets = 0;
     do {
+        if (solutionFound) {
+            return SudokuBoard(0);
+        }
         changedElimination = eliminatationStrategy(board);
         if (board.isSolved()) {
             return board;
@@ -302,32 +339,6 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
             return board;
         }
     } while (changedElimination > 0 || changedLoneRangers > 0 || changedTwins > 0 || changedTriplets > 0);
-
-
-    // next cell values
-    bool jumpRow = (col + 1) >= board.getRowSize();
-    int nextRow = row + (jumpRow ? 1 : 0);
-    int nextCol = jumpRow ? 0 : col + 1;
-
-    // add the current value of the cell in order to propagate
-    if (board[row][col] != 0) {
-        board.addPossibleValueForCell(row, col, board[row][col]);
-    }
-
-    // cell not solved, try all possible numbers in the cell
-    // value is valid, continue in to deep search
-    for (int possibleValue :board.getPossiblesValuesInCells()[row][col]) {
-        SudokuBoard copyBoard = board;
-
-        // set the value
-        copyBoard.setValueAndUpdatePossibilities(row, col, possibleValue);
-
-        SudokuBoard solution = solveBoard(copyBoard, solutionFound, nextRow, nextCol);
-        // if solution has been found, return recursion
-        if (!solution.isEmpty()) {
-            return solution;
-        }
-    }
 
     return SudokuBoard(0);
 }
