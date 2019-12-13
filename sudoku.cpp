@@ -427,8 +427,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                                 solutions.emplace_back(std::move(solution));
                             }
                             std::cout << "[" << processId << "]{" << omp_get_thread_num()
-                                      << "}: found a solution, the programm should stop." << std::endl
-                                      << "Problem equality : " << (solutions.front() == problems[i]) << std::endl;
+                                      << "}: found a solution, the programm should stop." << std::endl;
                         }
                     }
                 }
