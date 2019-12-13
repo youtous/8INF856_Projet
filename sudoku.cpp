@@ -534,6 +534,7 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
 }
 
 int eliminatationStrategy(SudokuBoard &board) {
+    // todo : figure out why it's bugged
     const int solvedCellsBefore = board.getCountSolvedCells();
     int solvedCells = board.getCountSolvedCells();
     for (int row = 0; row < board.getColumnSize(); ++row) {
