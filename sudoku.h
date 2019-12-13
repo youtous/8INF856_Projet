@@ -349,6 +349,44 @@ public:
     void setValueAndUpdatePossibilities(int row, int col, int value);
 
     /**
+     * Check a value is not duplicated in the row.
+     * @param row - the row
+     * @param value - the value
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedInRow(int row, int value) const;
+
+    /**
+     * Check a value is not duplicated in the column.
+     * @param col - the column
+     * @param value - the value
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedInCol(int col, int value) const;
+
+    /**
+     * Check a value is not duplicated in the block.
+     * @param row - the row of the cell
+     * @param col - the col of the cell
+     * @param value - the value
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedInBlock(int row, int col, int value) const;
+
+    /**
+     * Check a cell is not duplicated in row, block, column.
+     * @param row - the row of the cell
+     * @param col - the column of the cell
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedCell(int row, int col) const;
+
+    /**
+     * @return - true if the current board has a valid configuration, false otherwise.
+     */
+    bool checkIsValidConfig() const;
+
+    /**
      * @return - board as raw pointer to data
      */
     int *data() {

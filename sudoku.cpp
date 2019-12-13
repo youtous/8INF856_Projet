@@ -613,7 +613,6 @@ int eliminatationStrategy(SudokuBoard &board) {
 }
 
 int lonerangerStrategy(SudokuBoard &board) {
-    return 0;
     const int solvedCellsBefore = board.getCountSolvedCells();
     int solvedCells = board.getCountSolvedCells();
     // In a row/column/block, a value has only one cell left.
@@ -1062,6 +1061,72 @@ bool SudokuBoard::operator!=(const SudokuBoard &rhs) const {
     return !(rhs == *this);
 }
 
+bool SudokuBoard::checkNotDuplicatedInRow(int row, int value) const {
+    int found = 0;
+    for (int i = 0; i < getRowSize(); ++i) {
+        if (this->get(row, i) == value) {
+            if (found > 0) {
+                return false;
+            } else {
+                found += 1;
+            }
+        }
+    }
+    return true;
+}
+
+bool SudokuBoard::checkNotDuplicatedInCol(int col, int value) const {
+    int found = 0;
+    for (int i = 0; i < getColumnSize(); ++i) {
+        if (this->get(i, col) == value) {
+            if (found > 0) {
+                return false;
+            } else {
+                found += 1;
+            }
+        }
+    }
+    return true;
+}
+
+bool SudokuBoard::checkNotDuplicatedInBlock(int row, int col, int value) const {
+    int found = 0;
+
+    // check in block
+    const int initBlockRow = this->getStartingRowBlockOfCell(row);
+    const int initBlockCol = this->getStartingColBlockOfCell(col);
+    for (int k = 0; k < this->getSudokuDimension(); ++k) {
+        for (int p = 0; p < this->getSudokuDimension(); ++p) {
+            if (this->get(initBlockRow + k, initBlockCol + p) == value) {
+                if (found > 0) {
+                    return false;
+                } else {
+                    found += 1;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool SudokuBoard::checkNotDuplicatedCell(int row, int col) const {
+    const int value = this->get(row, col);
+    return checkNotDuplicatedInRow(row, value) && checkNotDuplicatedInCol(col, value) &&
+           checkNotDuplicatedInBlock(row, col, value);
+}
+
+bool SudokuBoard::checkIsValidConfig() const {
+    for (int row = 0; row < countRows(); ++row) {
+        for (int col = 0; col < countColumns(); ++col) {
+            if (this->get(row, col) != 0 && !checkNotDuplicatedCell(row, col)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 void writeInFile(std::string const &fileName, std::string const &contentFile) {
     std::ofstream mFile;
     mFile.exceptions(std::ifstream::badbit);
@@ -1148,7 +1213,9 @@ void testsCrook() {
     solveReduceCrook(sudoku, solutionFound);
     std::cout << "After crook :" << std::endl << sudoku;
 
+
     std::cout << ss.str() << std::endl;
+    std::cout << "After crook valid ? " << (sudoku.checkIsValidConfig() ? "yes" : "no") << std::endl;
 }
 
 void testFromStdin() {
