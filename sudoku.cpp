@@ -547,10 +547,15 @@ int eliminatationStrategy(SudokuBoard &board) {
     for (int row = 0; row < board.getColumnSize(); ++row) {
         for (int col = 0; col < board.getRowSize(); ++col) {
             if (board[row][col] == 0 &&
-                board.getPossiblesValuesInCells()[row][col].size() == 1) {
+                board.getPossiblesValuesInCells()[row][col].size() == 1
+                    ) {
                 auto firstElement = board.getPossiblesValuesInCells()[row][col].begin();
-                board.setValueAndUpdatePossibilities(row, col, *firstElement);
-                solvedCells += 1;
+
+                // value is available, we set it
+                if (board.testValueInCellFromCompute(row, col, *firstElement)) {
+                    board.setValueAndUpdatePossibilities(row, col, *firstElement);
+                    solvedCells += 1;
+                }
             }
             if (solvedCells == board.getSize()) {
                 break;
