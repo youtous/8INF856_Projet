@@ -1154,6 +1154,18 @@ void testsCrook() {
 void testFromStdin() {
     SudokuBoard sudoku = createFromStdin();
 
+    // test block method
+    std::stringstream ss;
+    for (int row = 0; row < sudoku.countRows(); ++row) {
+        for (int col = 0; col < sudoku.countColumns(); ++col) {
+            ss << sudoku.getBlockOfCell(row, col) << " ";
+        }
+        ss << std::endl;
+    }
+
+    std::cout << "Affichage des blocs sudoku :" << std::endl
+              << ss.str() << std::endl;
+
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;
 
