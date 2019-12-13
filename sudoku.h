@@ -322,6 +322,14 @@ public:
     int &get(int row, int col);
 
     /**
+     * Set a value for a cell and update related possibles values.
+     * @param row - row of the cell
+     * @param col - col of the cell
+     * @param value - value to set in the cell
+     */
+    void setValueAndUpdatePossibilities(int row, int col, int value);
+
+    /**
      * @return - board as raw pointer to data
      */
     int *data() {

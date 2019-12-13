@@ -447,6 +447,14 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     return SudokuBoard(0);
 }
 
+void SudokuBoard::setValueAndUpdatePossibilities(int row, int col, int value) {
+    this->operator[](row)[col] = value;
+    this->getPossiblesValuesInCells()[row][col].clear();
+    this->getPossiblesValuesInRows()[row].erase(value);
+    this->getPossiblesValuesInColumns()[col].erase(value);
+    this->getPossiblesValuesInBlocks()[this->getBlockOfCell(row, col)].erase(value);
+}
+
 bool SudokuBoard::testValueInCellFromCompute(int row, int col, int value) const {
     // same value
     if (this->get(row, col) == value) {
