@@ -567,30 +567,30 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems);
 /**
  * Apply elimination strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells.
  */
-bool eliminatationStrategy(SudokuBoard &board);
+int eliminatationStrategy(SudokuBoard &board);
 
 /**
  * Apply lone ranger strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells.
  */
-bool lonerangerStrategy(SudokuBoard &board);
+int lonerangerStrategy(SudokuBoard &board);
 
 /**
  * Apply twins strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells.
  */
-bool twinsStrategy(SudokuBoard &board);
+int twinsStrategy(SudokuBoard &board);
 
 /**
  * Apply triplets strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells.
  */
-bool tripletsStrategy(SudokuBoard &board);
+int tripletsStrategy(SudokuBoard &board);
 
 /**
  * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.

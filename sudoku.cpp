@@ -264,16 +264,16 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     }
 
     // apply humanistic heuristic
-    bool changedElimination = false;
-    bool changedLoneRangers = false;
-    bool changedTwins = false;
-    bool changedTriplets = false;
+    int changedElimination = 0;
+    int changedLoneRangers = 0;
+    int changedTwins = 0;
+    int changedTriplets = 0;
     do {
         changedElimination = eliminatationStrategy(board);
         if (board.isSolved()) {
             return board;
         }
-        if (changedElimination) {
+        if (changedElimination > 0) {
             continue;
         }
 
@@ -281,7 +281,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         if (board.isSolved()) {
             return board;
         }
-        if (changedLoneRangers) {
+        if (changedLoneRangers > 0) {
             continue;
         }
 
@@ -289,7 +289,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         if (board.isSolved()) {
             return board;
         }
-        if (changedTwins) {
+        if (changedTwins > 0) {
             continue;
         }
 
@@ -297,7 +297,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         if (board.isSolved()) {
             return board;
         }
-    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
+    } while (changedElimination > 0 || changedLoneRangers > 0 || changedTwins > 0 || changedTriplets > 0);
 
 
     // next cell values
@@ -534,15 +534,15 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
     return true;
 }
 
-bool eliminatationStrategy(SudokuBoard &board) {
-    return false;
+int eliminatationStrategy(SudokuBoard &board) {
+    const int solvedCellsBefore = board.getCountSolvedCells();
     int solvedCells = board.getCountSolvedCells();
     for (int row = 0; row < board.getColumnSize(); ++row) {
         for (int col = 0; col < board.getRowSize(); ++col) {
             if (board[row][col] == 0 &&
                 board.getPossiblesValuesInCells()[row][col].size() == 1) {
-                // todo : fix this
-                // board[row][col] = board.getPossiblesValuesInCells()[row][col][0];
+                auto firstElement = board.getPossiblesValuesInCells()[row][col].begin();
+                board.setValueAndUpdatePossibilities(row, col, *firstElement);
                 solvedCells += 1;
             }
             if (solvedCells == board.getSize()) {
@@ -554,21 +554,20 @@ bool eliminatationStrategy(SudokuBoard &board) {
         }
     }
 
-    bool changed = board.getCountSolvedCells() != solvedCells;
     board.setCountSolvedCells(solvedCells);
-    return changed;
+    return solvedCells - solvedCellsBefore;
 }
 
-bool lonerangerStrategy(SudokuBoard &board) {
-    return false;
+int lonerangerStrategy(SudokuBoard &board) {
+    return 0;
 }
 
-bool twinsStrategy(SudokuBoard &board) {
-    return false;
+int twinsStrategy(SudokuBoard &board) {
+    return 0;
 }
 
-bool tripletsStrategy(SudokuBoard &board) {
-    return false;
+int tripletsStrategy(SudokuBoard &board) {
+    return 0;
 }
 // End of Solver methods
 
