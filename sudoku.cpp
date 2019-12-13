@@ -244,11 +244,10 @@ void initSolveMPI() {
 }
 
 // Begin of Solver methods
-SudokuBoard solveBoardRecursive(SudokuBoard const &board, bool &solutionFound) {
-    SudokuBoard copyBoard = board;
-    copyBoard.recountSolvedCells();
-    copyBoard.computePossiblesValuesInCells();
-    return solveBoard(copyBoard, solutionFound);
+SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound) {
+    board.recountSolvedCells();
+    board.computePossiblesValuesInCells();
+    return solveBoard(board, solutionFound);
 }
 
 SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col) {
@@ -261,7 +260,8 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     // check end reached => terminate recursion
     if (index >= board.getSize()) {
         // the board is solved, return it
-        return SudokuBoard(board);
+        std::cout << "solution is =" << std::endl << board << std::endl;
+        return board;
     }
 
     // apply humanistic heuristic
@@ -269,60 +269,61 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     bool changedLoneRangers = false;
     bool changedTwins = false;
     bool changedTriplets = false;
-    do {
-        changedElimination = eliminatationStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-        if (changedElimination) {
-            continue;
-        }
+    /* do {
+         changedElimination = eliminatationStrategy(board);
+         if (board.isSolved()) {
+             return board;
+         }
+         if (changedElimination) {
+             continue;
+         }
 
-        changedLoneRangers = lonerangerStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-        if (changedLoneRangers) {
-            continue;
-        }
+         changedLoneRangers = lonerangerStrategy(board);
+         if (board.isSolved()) {
+             return board;
+         }
+         if (changedLoneRangers) {
+             continue;
+         }
 
-        changedTwins = twinsStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-        if (changedTwins) {
-            continue;
-        }
+         changedTwins = twinsStrategy(board);
+         if (board.isSolved()) {
+             return board;
+         }
+         if (changedTwins) {
+             continue;
+         }
 
-        changedTriplets = tripletsStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
+         changedTriplets = tripletsStrategy(board);
+         if (board.isSolved()) {
+             return board;
+         }
+     } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
 
-    // todo : if changed, find next cell
-
-
-    // value is valid, continue in to deep search
+     */
+    // next cell values
     bool jumpRow = (col + 1) >= board.getRowSize();
     int nextRow = row + (jumpRow ? 1 : 0);
     int nextCol = jumpRow ? 0 : col + 1;
-    int oValue = board[row][col];
-    // try all possible numbers in the cell
-    for (int i = 1; i <= board.getBlockSize(); ++i) {
-        if (board.testValueInCellFromCompute(row, col, i)) {
-            // set the value
-            board[row][col] = i;
 
-            // compute next cell
-            SudokuBoard solution = solveBoard(board, solutionFound, nextRow, nextCol);
-            // if solution has been found, return recursion
-            if (!solution.isEmpty()) {
-                return solution;
-            }
-            board[row][col] = oValue;
+    // add the current value of the cell in order to propagate
+    board.getPossiblesValuesInCells()[row][col].insert(board[row][col]);
+
+    // cell not solved, try all possible numbers in the cell
+    // value is valid, continue in to deep search
+    for (int possibleValue :board.getPossiblesValuesInCells()[row][col]) {
+        SudokuBoard copyBoard = board;
+
+        // set the value
+        copyBoard.setValueAndUpdatePossibilities(row, col, possibleValue);
+
+        SudokuBoard solution = solveBoard(copyBoard, solutionFound, nextRow, nextCol);
+        // if solution has been found, return recursion
+        if (!solution.isEmpty()) {
+            return solution;
         }
     }
+
     return SudokuBoard(0);
 }
 
@@ -425,7 +426,8 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                                 solutions.emplace_back(std::move(solution));
                             }
                             std::cout << "[" << processId << "]{" << omp_get_thread_num()
-                                      << "}: found a solution, the programm should stop." << std::endl;
+                                      << "}: found a solution, the programm should stop." << std::endl
+                                      << "Problem equality : " << (solutions.front() == problems[i]) << std::endl;
                         }
                     }
                 }
@@ -518,6 +520,7 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
 }
 
 bool eliminatationStrategy(SudokuBoard &board) {
+    return false;
     int solvedCells = board.getCountSolvedCells();
     for (int row = 0; row < board.getColumnSize(); ++row) {
         for (int col = 0; col < board.getRowSize(); ++col) {
