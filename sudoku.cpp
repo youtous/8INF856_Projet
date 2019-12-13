@@ -321,6 +321,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedElimination > 0) {
+            std::cout << "ELIMINATION = " << changedElimination << std::endl;
             continue;
         }
         if (changedElimination == -1) {
@@ -333,6 +334,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedLoneRangers > 0) {
+            std::cout << "LONE RANGERS = " << changedLoneRangers << std::endl;
             continue;
         }
         if (changedLoneRangers == -1) {
@@ -346,6 +348,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedTwins > 0) {
+            std::cout << "TWINS = " << changedTwins << std::endl;
             continue;
         }
         if (changedTwins == -1) {
@@ -356,6 +359,9 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
         changedTriplets = tripletsStrategy(board);
         if (board.isSolved()) {
             return board;
+        }
+        if (changedTriplets > 0) {
+            std::cout << "TRIPLETS = " << changedTwins << std::endl;
         }
         if (changedTriplets == -1) {
             board = SudokuBoard(0);
@@ -683,25 +689,31 @@ int lonerangerStrategy(SudokuBoard &board) {
             // row
             auto const &positionRow = rowsCellsValues[i][value];
             if (positionRow.first >= 0 && positionRow.second >= 0) {
-                // lone ranger found, set value
-                board.setValueAndUpdatePossibilities(positionRow.first, positionRow.second, value);
-                solvedCells += 1;
+                if (board.testValueInCellFromCompute(positionRow.first, positionRow.second, value)) {
+                    // lone ranger found, set value
+                    board.setValueAndUpdatePossibilities(positionRow.first, positionRow.second, value);
+                    solvedCells += 1;
+                }
             }
 
             // col
             auto const &positionCol = columnsCellsValues[i][value];
             if (positionCol.first >= 0 && positionCol.second >= 0) {
-                // lone ranger found, set value
-                board.setValueAndUpdatePossibilities(positionCol.first, positionCol.second, value);
-                solvedCells += 1;
+                if (board.testValueInCellFromCompute(positionCol.first, positionCol.second, value)) {
+                    // lone ranger found, set value
+                    board.setValueAndUpdatePossibilities(positionCol.first, positionCol.second, value);
+                    solvedCells += 1;
+                }
             }
 
             // block
             auto const &positionBlock = blocksCellsValues[i][value];
             if (positionBlock.first >= 0 && positionBlock.second >= 0) {
-                // lone ranger found, set value
-                board.setValueAndUpdatePossibilities(positionBlock.first, positionBlock.second, value);
-                solvedCells += 1;
+                if (board.testValueInCellFromCompute(positionBlock.first, positionBlock.second, value)) {
+                    // lone ranger found, set value
+                    board.setValueAndUpdatePossibilities(positionBlock.first, positionBlock.second, value);
+                    solvedCells += 1;
+                }
             }
         }
     }
