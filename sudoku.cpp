@@ -886,6 +886,17 @@ std::string SudokuBoard::export_str() const {
     return exportStr.str();
 }
 
+bool SudokuBoard::operator==(const SudokuBoard &rhs) const {
+    return arrAsLine == rhs.arrAsLine &&
+           n == rhs.n &&
+           rows == rhs.rows &&
+           cols == rhs.cols;
+}
+
+bool SudokuBoard::operator!=(const SudokuBoard &rhs) const {
+    return !(rhs == *this);
+}
+
 void writeInFile(std::string const &fileName, std::string const &contentFile) {
     std::ofstream mFile;
     mFile.exceptions(std::ifstream::badbit);

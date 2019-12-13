@@ -358,6 +358,10 @@ public:
      */
     std::pair<int, int> nextEmptyCell() const;
 
+    bool operator==(const SudokuBoard &rhs) const;
+
+    bool operator!=(const SudokuBoard &rhs) const;
+
     /**
      * SudokuRow represents a row of the Matrix.
      */
