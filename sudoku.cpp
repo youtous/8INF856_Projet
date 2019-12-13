@@ -52,7 +52,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    initSolveMPI();
+    // initSolveMPI();
+
+    if (processId == 0) {
+        testsCrook();
+    }
 
     MPI_Finalize();
     return 0;
@@ -984,6 +988,31 @@ SudokuBoard receiveSudokuBoard(int src, int tag, MPI_Comm pCommunicator) {
 
 
 // Begin of test methods
+void testsCrook() {
+    SudokuBoard sudoku = createFromStdin();
+
+    std::cout << "Affichage du sudoku :" << std::endl
+              << sudoku << std::endl;
+
+    sudoku.computePossiblesValuesInCells();
+
+    std::stringstream ss;
+
+    for (int row = 0; row < sudoku.countRows(); ++row) {
+        for (int col = 0; col < sudoku.countColumns(); ++col) {
+            if (sudoku[row][col] == 0) {
+                ss << "Values for {" << row << "," << col << "} = ";
+                for (auto &v: sudoku.getPossiblesValuesInCells()[row][col]) {
+                    ss << v << ",";
+                }
+                ss << std::endl;
+            }
+        }
+    }
+
+    std::cout << ss.str() << std::endl;
+}
+
 void testFromStdin() {
     SudokuBoard sudoku = createFromStdin();
 

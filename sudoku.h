@@ -12,6 +12,7 @@
 #include <deque>
 #include <utility>
 #include <set>
+#include <mpi.h>
 
 #define CUSTOM_MPI_SOLUTIONS_TAG            10
 #define CUSTOM_MPI_POSSIBILITIES_TAG            11
@@ -659,6 +660,11 @@ void initSolveMPI();
  * Function used for tests
  */
 void tests();
+
+/**
+ * Function used for tests
+ */
+void testsCrook();
 
 /**
  * Function used for tests
