@@ -743,23 +743,25 @@ void SudokuBoard::computePossiblesValuesInCells() {
         possiblesValues.insert(i);
     }
 
-    this->possiblesValuesInColumns.resize(getRowSize(), possiblesValues);
-    this->possiblesValuesInRows.resize(getColumnSize(), possiblesValues);
-    this->possiblesValuesInBlocks.resize(getBlockSize(), possiblesValues);
-    this->possiblesValuesInCells.resize(getRowSize(), std::vector<std::set<int>>(getColumnSize()));
+    this->possiblesValuesInColumns.resize(countColumns(), possiblesValues);
+    this->possiblesValuesInRows.resize(countRows(), possiblesValues);
+    this->possiblesValuesInBlocks.resize(countBlocks(), possiblesValues);
+    this->possiblesValuesInCells.resize(countRows(), std::vector<std::set<int>>(countColumns()));
 
-    for (int row = 0; row < getRowSize(); ++row) {
-        for (int col = 0; col < getColumnSize(); ++col) {
+    for (int row = 0; row < countRows(); ++row) {
+        for (int col = 0; col < countColumns(); ++col) {
+            const int value = this->get(row, col);
             // value already set
-            if (this->get(row, col) != 0) {
-                possiblesValuesInBlocks[getBlockOfCell(row, col)].erase(this->get(row, col));
-                possiblesValuesInRows[row].erase(this->get(row, col));
-                possiblesValuesInColumns[col].erase(this->get(row, col));
+            if (value != 0) {
+                possiblesValuesInCells[row][col].clear();
+                possiblesValuesInBlocks[getBlockOfCell(row, col)].erase(value);
+                possiblesValuesInRows[row].erase(value);
+                possiblesValuesInColumns[col].erase(value);
             } else {
                 // test with values
-                for (int value = 0; value < getBlockSize(); ++value) {
-                    if (testValueInCell(row, col, value)) {
-                        this->possiblesValuesInCells[row][col].insert(value);
+                for (int valueTest = 1; valueTest <= getBlockSize(); ++valueTest) {
+                    if (testValueInCell(row, col, valueTest)) {
+                        this->possiblesValuesInCells[row][col].insert(valueTest);
                     }
                 }
             }

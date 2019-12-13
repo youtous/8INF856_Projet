@@ -93,6 +93,25 @@ public:
 
     /**
      * @complexity - O(1) - constant
+     * @return - number of columns
+     */
+    inline int countColumns() const { return cols; }
+
+    /**
+     * @complexity - O(1) - constant
+     * @return - number of rows
+     */
+    inline int countRows() const { return rows; }
+
+    /**
+     * @complexity - O(1) - constant
+     * @return - number of blocks
+     */
+    inline int countBlocks() const { return rows; }
+
+
+    /**
+     * @complexity - O(1) - constant
      * @return - size of a row
      */
     inline int getRowSize() const { return rows; }
