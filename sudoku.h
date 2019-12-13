@@ -213,6 +213,12 @@ public:
      * @param value - value between 1 and getBlockSize
      */
     void addPossibleValueForCell(int row, int col, int value);
+    /**
+     * Remove a possible value for a given cell.
+     * @param row - row of the cell
+     * @param col - col of the cell
+     */
+    void removePossibleValueForCell(int row, int col, int value);
 
     /**
      * @return - true if the board is solved.
