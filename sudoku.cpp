@@ -269,7 +269,12 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
 
     SudokuBoard solution = solveReduceCrook(board, solutionFound);
     if (!solution.isEmpty()) {
+        // crook discovered a solution
         return solution;
+    }
+    if(board.isEmpty()) {
+        // crook discovered a dead end
+        return board;
     }
 
     // next cell values
@@ -308,7 +313,8 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
     int changedTriplets = 0;
     do {
         if (solutionFound) {
-            return SudokuBoard(0);
+            board = SudokuBoard(0);
+            return board;
         }
         changedElimination = eliminatationStrategy(board);
         if (board.isSolved()) {
@@ -316,6 +322,10 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
         }
         if (changedElimination > 0) {
             continue;
+        }
+        if (changedElimination == -1) {
+            board = SudokuBoard(0);
+            return board;
         }
 
         changedLoneRangers = lonerangerStrategy(board);
@@ -325,6 +335,11 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
         if (changedLoneRangers > 0) {
             continue;
         }
+        if (changedLoneRangers == -1) {
+            board = SudokuBoard(0);
+            return board;
+        }
+
 
         changedTwins = twinsStrategy(board);
         if (board.isSolved()) {
@@ -333,9 +348,17 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
         if (changedTwins > 0) {
             continue;
         }
+        if (changedTwins == -1) {
+            board = SudokuBoard(0);
+            return board;
+        }
 
         changedTriplets = tripletsStrategy(board);
         if (board.isSolved()) {
+            return board;
+        }
+        if (changedTriplets == -1) {
+            board = SudokuBoard(0);
             return board;
         }
     } while (changedElimination > 0 || changedLoneRangers > 0 || changedTwins > 0 || changedTriplets > 0);
@@ -570,6 +593,9 @@ int eliminatationStrategy(SudokuBoard &board) {
                 if (board.testValueInCellFromCompute(row, col, *firstElement)) {
                     board.setValueAndUpdatePossibilities(row, col, *firstElement);
                     solvedCells += 1;
+                } else {
+                    // value not settable => dead-end
+                    return -1;
                 }
             }
             if (solvedCells == board.getSize()) {

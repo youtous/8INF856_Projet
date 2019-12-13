@@ -556,7 +556,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row = 0, int
 /**
  * Solve a given SudokuBoard using Crook's algorithm.
  *
- * @param board - the board to solve
+ * @param board - the board to solve, will be set empty if the algorithm discovered a dead-end
  * @param solutionFound - a flag used to stop recursion
  * @param row - (optional) the row of the cell to work on
  * @param col - (optional) the column of the cell to work on
@@ -590,28 +590,28 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems);
 /**
  * Apply elimination strategy on the SudokuBoard.
  * @param board - the board.
- * @return - number of changed cells.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
 int eliminatationStrategy(SudokuBoard &board);
 
 /**
  * Apply lone ranger strategy on the SudokuBoard.
  * @param board - the board.
- * @return - number of changed cells.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
 int lonerangerStrategy(SudokuBoard &board);
 
 /**
  * Apply twins strategy on the SudokuBoard.
  * @param board - the board.
- * @return - number of changed cells.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
 int twinsStrategy(SudokuBoard &board);
 
 /**
  * Apply triplets strategy on the SudokuBoard.
  * @param board - the board.
- * @return - number of changed cells.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
 int tripletsStrategy(SudokuBoard &board);
 
