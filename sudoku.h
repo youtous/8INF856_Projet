@@ -558,8 +558,6 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row = 0, int
  *
  * @param board - the board to solve, will be set empty if the algorithm discovered a dead-end
  * @param solutionFound - a flag used to stop recursion
- * @param row - (optional) the row of the cell to work on
- * @param col - (optional) the column of the cell to work on
  * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
 SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound);

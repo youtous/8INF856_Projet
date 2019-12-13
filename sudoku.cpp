@@ -272,7 +272,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         // crook discovered a solution
         return solution;
     }
-    if(board.isEmpty()) {
+    if (board.isEmpty()) {
         // crook discovered a dead end
         return board;
     }
@@ -580,6 +580,7 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
 
 int eliminatationStrategy(SudokuBoard &board) {
     // todo : figure out why it's bugged
+    // A cell has only one value left.
     const int solvedCellsBefore = board.getCountSolvedCells();
     int solvedCells = board.getCountSolvedCells();
     for (int row = 0; row < board.getColumnSize(); ++row) {
@@ -613,6 +614,101 @@ int eliminatationStrategy(SudokuBoard &board) {
 
 int lonerangerStrategy(SudokuBoard &board) {
     return 0;
+    const int solvedCellsBefore = board.getCountSolvedCells();
+    int solvedCells = board.getCountSolvedCells();
+    // In a row/column/block, a value has only one cell left.
+
+    // temp save coordinates of last value encountered in the row/col/block
+    // rowsCellsValues[row][value] = cell coord {row, col}
+    //                                          -1, -1 => cell found
+    //                                          -2, -2 => too many cells found
+    std::vector<std::vector<std::pair<int, int>>> rowsCellsValues(board.countRows(),
+                                                                  std::vector<std::pair<int, int>>(
+                                                                          board.countRows() + 1,
+                                                                          std::pair<int, int>(
+                                                                                  -1, -1)));
+    std::vector<std::vector<std::pair<int, int>>> columnsCellsValues(board.countColumns(),
+                                                                     std::vector<std::pair<int, int>>(
+                                                                             board.countRows() + 1,
+                                                                             std::pair<int, int>(
+                                                                                     -1, -1)));
+    std::vector<std::vector<std::pair<int, int>>> blocksCellsValues(board.countBlocks(),
+                                                                    std::vector<std::pair<int, int>>(
+                                                                            board.countRows() + 1,
+                                                                            std::pair<int, int>(
+                                                                                    -1, -1)));
+
+    // save last position of each possible value
+    for (int row = 0; row < board.countRows(); ++row) {
+        // save last cell encoutered with the value
+        for (int col = 0; col < board.countColumns(); ++col) {
+            auto const &possibilitiesInCell = board.getPossiblesValuesInCells()[row][col];
+
+            for (auto const possibleValue: possibilitiesInCell) {
+                // check in row
+                auto const &lastCellInRow = rowsCellsValues[row][possibleValue];
+                if (lastCellInRow.first == -1 && lastCellInRow.second == -1) {
+                    // first encounter
+                    rowsCellsValues[row][possibleValue] = std::pair<int, int>(row, col);
+                } else {
+                    // not first encounter, mark as not unique
+                    rowsCellsValues[row][possibleValue] = std::pair<int, int>(-2, -2);
+                }
+
+                // check in col
+                auto const &lastCellInCol = columnsCellsValues[col][possibleValue];
+                if (lastCellInCol.first == -1 && lastCellInCol.second == -1) {
+                    // first encounter
+                    columnsCellsValues[col][possibleValue] = std::pair<int, int>(row, col);
+                } else {
+                    // not first encounter, mark as not unique
+                    columnsCellsValues[col][possibleValue] = std::pair<int, int>(-2, -2);
+                }
+
+                // check in block
+                auto const &lastCellInBlock = blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue];
+                if (lastCellInBlock.first == -1 && lastCellInBlock.second == -1) {
+                    // first encounter
+                    blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue] = std::pair<int, int>(row, col);
+                } else {
+                    // not first encounter, mark as not unique
+                    blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue] = std::pair<int, int>(-2, -2);
+                }
+            }
+        }
+    }
+
+    // reduce with lone ranger found
+    for (int i = 0; i < board.countRows(); ++i) {
+        for (int value = 1; value <= board.countRows(); ++value) {
+            // row
+            auto const &positionRow = rowsCellsValues[i][value];
+            if (positionRow.first >= 0 && positionRow.second >= 0) {
+                // lone ranger found, set value
+                board.setValueAndUpdatePossibilities(positionRow.first, positionRow.second, value);
+                solvedCells += 1;
+            }
+
+            // col
+            auto const &positionCol = columnsCellsValues[i][value];
+            if (positionCol.first >= 0 && positionCol.second >= 0) {
+                // lone ranger found, set value
+                board.setValueAndUpdatePossibilities(positionCol.first, positionCol.second, value);
+                solvedCells += 1;
+            }
+
+            // block
+            auto const &positionBlock = blocksCellsValues[i][value];
+            if (positionBlock.first >= 0 && positionBlock.second >= 0) {
+                // lone ranger found, set value
+                board.setValueAndUpdatePossibilities(positionBlock.first, positionBlock.second, value);
+                solvedCells += 1;
+            }
+        }
+    }
+
+    board.setCountSolvedCells(solvedCells);
+    return solvedCells - solvedCellsBefore;
 }
 
 int twinsStrategy(SudokuBoard &board) {
