@@ -241,9 +241,17 @@ void initSolveMPI() {
                   << p1Time << " seconds. " << std::endl;
         std::cout.unsetf(std::ios::fixed);
     }
-    if (processId == 0) {
-        // end of the work for everyone !
-        MPI_Abort(MPI_COMM_WORLD, 0);
+
+    // assert sudoku returned is valid
+    if(processId == 0) {
+        if(!solutionBoards.front().checkIsValidConfig()) {
+            std::cerr << "ERROR : Return sudoku is invalid !" << std::endl;
+            MPI_Abort(MPI_COMM_WORLD, CUSTOM_MPI_INVALID_SUDOKU_RETURNED);
+        } else {
+            // everything is fine
+            // end of the work for everyone !
+            MPI_Abort(MPI_COMM_WORLD, 0);
+        }
     }
 }
 

@@ -18,6 +18,7 @@
 #define CUSTOM_MPI_POSSIBILITIES_TAG            11
 #define CUSTOM_MPI_IDLE_TAG            12
 #define CUSTOM_MPI_STOP_WORK_TAG            13
+#define CUSTOM_MPI_INVALID_SUDOKU_RETURNED            15
 
 
 /**
