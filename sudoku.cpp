@@ -260,7 +260,6 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     // check end reached => terminate recursion
     if (index >= board.getSize()) {
         // the board is solved, return it
-        std::cout << "solution is =" << std::endl << board << std::endl;
         return board;
     }
 
@@ -269,45 +268,47 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     bool changedLoneRangers = false;
     bool changedTwins = false;
     bool changedTriplets = false;
-    /* do {
-         changedElimination = eliminatationStrategy(board);
-         if (board.isSolved()) {
-             return board;
-         }
-         if (changedElimination) {
-             continue;
-         }
+    do {
+        changedElimination = eliminatationStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+        if (changedElimination) {
+            continue;
+        }
 
-         changedLoneRangers = lonerangerStrategy(board);
-         if (board.isSolved()) {
-             return board;
-         }
-         if (changedLoneRangers) {
-             continue;
-         }
+        changedLoneRangers = lonerangerStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+        if (changedLoneRangers) {
+            continue;
+        }
 
-         changedTwins = twinsStrategy(board);
-         if (board.isSolved()) {
-             return board;
-         }
-         if (changedTwins) {
-             continue;
-         }
+        changedTwins = twinsStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+        if (changedTwins) {
+            continue;
+        }
 
-         changedTriplets = tripletsStrategy(board);
-         if (board.isSolved()) {
-             return board;
-         }
-     } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
+        changedTriplets = tripletsStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
 
-     */
+
     // next cell values
     bool jumpRow = (col + 1) >= board.getRowSize();
     int nextRow = row + (jumpRow ? 1 : 0);
     int nextCol = jumpRow ? 0 : col + 1;
 
     // add the current value of the cell in order to propagate
-    board.getPossiblesValuesInCells()[row][col].insert(board[row][col]);
+    if (board[row][col] != 0) {
+        board.addPossibleValueForCell(row, col, board[row][col]);
+    }
 
     // cell not solved, try all possible numbers in the cell
     // value is valid, continue in to deep search
@@ -446,6 +447,20 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
 
     // no solution found
     return SudokuBoard(0);
+}
+
+void SudokuBoard::addPossibleValueForCell(int row, int col, int value) {
+    if (value < 1 || value > this->getBlockSize()) {
+        std::stringstream ss;
+        ss << "Could not add " << value << " to cell {" << row << "," << col << "}. Value must be between 1 and "
+           << getBlockSize() << ".";
+        throw std::invalid_argument(ss.str());
+    }
+    this->getPossiblesValuesInCells()[row][col].insert(value);
+    this->getPossiblesValuesInRows()[row].insert(value);
+    this->getPossiblesValuesInColumns()[col].insert(value);
+    this->getPossiblesValuesInBlocks()[this->getBlockOfCell(row, col)].insert(value);
+
 }
 
 void SudokuBoard::setValueAndUpdatePossibilities(int row, int col, int value) {
