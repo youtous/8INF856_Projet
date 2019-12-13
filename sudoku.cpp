@@ -268,7 +268,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     }
 
     SudokuBoard solution = solveReduceCrook(board, solutionFound);
-    if(!solution.isEmpty()) {
+    if (!solution.isEmpty()) {
         return solution;
     }
 
@@ -1009,17 +1009,22 @@ void testsCrook() {
 
     std::stringstream ss;
 
-    for (int row = 0; row < sudoku.countRows(); ++row) {
-        for (int col = 0; col < sudoku.countColumns(); ++col) {
-            if (sudoku[row][col] == 0) {
-                ss << "Values for {" << row << "," << col << "} = ";
-                for (auto &v: sudoku.getPossiblesValuesInCells()[row][col]) {
-                    ss << v << ",";
-                }
-                ss << std::endl;
-            }
-        }
-    }
+    /* for (int row = 0; row < sudoku.countRows(); ++row) {
+         for (int col = 0; col < sudoku.countColumns(); ++col) {
+             if (sudoku[row][col] == 0) {
+                 ss << "Values for {" << row << "," << col << "} = ";
+                 for (auto &v: sudoku.getPossiblesValuesInCells()[row][col]) {
+                     ss << v << ",";
+                 }
+                 ss << std::endl;
+             }
+         }
+     } */
+
+    std::cout << "Apply crook strategy" << std::endl;
+    bool solutionFound = false;
+    solveReduceCrook(sudoku, solutionFound);
+    std::cout << "After crook :" << std::endl << sudoku;
 
     std::cout << ss.str() << std::endl;
 }
