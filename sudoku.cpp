@@ -341,7 +341,7 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
     // all cells have a value, we found a solution,
     // add it to the solutions list, JOB IS DONE !
     if (nextEmptyCell.first == -1) {
-        SudokuBoard solution = SudokuBoard(workingBoard);
+        SudokuBoard solution = workingBoard;
         boardsToWork.pop_front();
         return solution;
     }
