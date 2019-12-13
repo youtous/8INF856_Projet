@@ -244,15 +244,14 @@ void initSolveMPI() {
 }
 
 // Begin of Solver methods
-
-SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound) {
-    board.recountSolvedCells();
-    board.computePossiblesValuesInCells();
-
-    return solveBoard(board, solutionFound);
+SudokuBoard solveBoardRecursive(SudokuBoard const &board, bool &solutionFound) {
+    SudokuBoard copyBoard = board;
+    copyBoard.recountSolvedCells();
+    copyBoard.computePossiblesValuesInCells();
+    return solveBoard(copyBoard, solutionFound);
 }
 
-SudokuBoard solveBoard(SudokuBoard board, bool &solutionFound, int row, int col) {
+SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col) {
     if (solutionFound) {
         return SudokuBoard(0);
     }

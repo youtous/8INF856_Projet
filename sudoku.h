@@ -517,7 +517,7 @@ void writeInFile(std::string const &fileName, std::string const &contentFile);
  * @param board - the board to solve
  * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
-SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound);
+SudokuBoard solveBoardRecursive(SudokuBoard const &board, bool &solutionFound);
 
 /**
  * Solve a given SudokuBoard.
