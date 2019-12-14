@@ -622,6 +622,7 @@ int eliminatationStrategy(SudokuBoard &board) {
                         return -1;
                     }
                 } else if (board.getPossiblesValuesInCells()[row][col].empty()) {
+                    std::cerr << "cell {" << row << "," << col << "} has no possibility, dead-end" << std::endl;
                     // no possible value for this cell => dead-end
                     return -1;
                 }
@@ -715,8 +716,10 @@ int lonerangerStrategy(SudokuBoard &board) {
                     board.setValueAndUpdatePossibilities(positionRow.first, positionRow.second, value);
                     solvedCells += 1;
                 } else {
+                    // todo : check this
                     // value is not settable, maybe an other cell took its place, remove possible value from this cell
                     board.removePossibleValueForCell(positionRow.first, positionRow.second, value);
+                    // todo fix this => a bug will occur due to solvedCell value update
                     solvedCells += 1;
                 }
             }
@@ -757,6 +760,15 @@ int lonerangerStrategy(SudokuBoard &board) {
 
 int twinsStrategy(SudokuBoard &board) {
     return 0;
+    const int solvedCellsBefore = board.getCountSolvedCells();
+    int solvedCells = board.getCountSolvedCells();
+   // in a row, there are exactly 2 cells containing 2 sames values
+   // eg. {2,3,4} {1,5} {3,4,7}, {7,9}, {1,9},
+   // result will be equals to
+   // {3,4}, {1,5}, {3,4}, {7,9}, {1,9}
+
+    board.setCountSolvedCells(solvedCells);
+    return solvedCells - solvedCellsBefore;
 }
 
 int tripletsStrategy(SudokuBoard &board) {
