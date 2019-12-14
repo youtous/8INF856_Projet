@@ -10,6 +10,7 @@
 #include <mpi.h>
 #include <omp.h>
 #include <algorithm>
+#include <chrono>
 #include "sudoku.h"
 
 /**
@@ -53,11 +54,11 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // initSolveMPI();
+    initSolveMPI();
 
-    if (processId == 0) {
+    /**if (processId == 0) {
         testsCrook();
-    }
+    } **/
 
     MPI_Finalize();
     return 0;
@@ -272,7 +273,11 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         return board;
     }
 
+    // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     solveReduceCrook(board, solutionFound);
+    // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    // std::cout << "Time elapsed = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
+
     if (board.isEmpty()) {
         // crook discovered a dead end
         return board;
