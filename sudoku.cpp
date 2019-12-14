@@ -272,25 +272,27 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         return board;
     }
 
-    SudokuBoard solution = solveReduceCrook(board, solutionFound);
-    if (!solution.isEmpty()) {
-        // crook discovered a solution
-        return solution;
-    }
+    solveReduceCrook(board, solutionFound);
     if (board.isEmpty()) {
         // crook discovered a dead end
         return board;
     }
 
-    // next cell values
-    bool jumpRow = (col + 1) >= board.getRowSize();
-    int nextRow = row + (jumpRow ? 1 : 0);
-    int nextCol = jumpRow ? 0 : col + 1;
-
-    // add the current value of the cell in order to propagate
-    if (board[row][col] != 0) {
-        board.addPossibleValueForCell(row, col, board[row][col]);
+    std::pair<int, int> nextCell = board.nextEmptyCell();
+    // solution found !
+    if (nextCell.first == -1) {
+        return board;
     }
+
+    if (board[row][col] != 0) {
+        // jump to next cell
+        // current cell solved, continue recursion
+        return solveBoard(board, solutionFound, nextCell.first, nextCell.second);
+    }
+
+
+    int nextRow = nextCell.first;
+    int nextCol = nextCell.second;
 
     // cell not solved, try all possible numbers in the cell
     // value is valid, continue in to deep search
