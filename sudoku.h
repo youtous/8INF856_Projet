@@ -46,6 +46,11 @@ private:
     int countSolvedCells = 0;
 
     /**
+     * Mark if possibles values has been computed.
+     */
+    bool computedPossibleValues = false;
+
+    /**
      * Store possibles values in each cell.
      */
     std::vector<std::vector<std::set<int>>> possiblesValuesInCells;
@@ -168,6 +173,11 @@ public:
      * Computes possibles values in each cell.
      */
     void computePossiblesValuesInCells();
+
+    /**
+     * @return - true if a computation was done, false otherwise.
+     */
+    bool isComputedPossibleValues() const;
 
     /**
      * @return - mapping of each possible values in each cell.

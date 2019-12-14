@@ -89,6 +89,8 @@ void initSolveMPI() {
 
         // generate the first sub-problems in order to dispatch work between nodes
         problemBoards.emplace_front(std::move(sudoku));
+        problemBoards.front().recountSolvedCells();
+        problemBoards.front().computePossiblesValuesInCells();
         while (!problemBoards.empty() && problemBoards.size() < COUNT_PROBLEMS_TO_GENERATE_ON_MASTER) {
             SudokuBoard solution = generatePossibilitiesNextCell(problemBoards);
 
@@ -243,8 +245,8 @@ void initSolveMPI() {
     }
 
     // assert sudoku returned is valid
-    if(processId == 0) {
-        if(!solutionBoards.front().checkIsValidConfig()) {
+    if (processId == 0) {
+        if (!solutionBoards.front().checkIsValidConfig()) {
             std::cerr << "ERROR : Return sudoku is invalid !" << std::endl;
             MPI_Abort(MPI_COMM_WORLD, CUSTOM_MPI_INVALID_SUDOKU_RETURNED);
         } else {
@@ -329,7 +331,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedElimination > 0) {
-            std::cout << "ELIMINATION = " << changedElimination << std::endl;
+          //  std::cout << "ELIMINATION = " << changedElimination << std::endl;
             continue;
         }
         if (changedElimination == -1) {
@@ -342,7 +344,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedLoneRangers > 0) {
-            std::cout << "LONE RANGERS = " << changedLoneRangers << std::endl;
+            // std::cout << "LONE RANGERS = " << changedLoneRangers << std::endl;
             continue;
         }
         if (changedLoneRangers == -1) {
@@ -356,7 +358,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedTwins > 0) {
-            std::cout << "TWINS = " << changedTwins << std::endl;
+            // std::cout << "TWINS = " << changedTwins << std::endl;
             continue;
         }
         if (changedTwins == -1) {
@@ -369,7 +371,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedTriplets > 0) {
-            std::cout << "TRIPLETS = " << changedTwins << std::endl;
+           // std::cout << "TRIPLETS = " << changedTwins << std::endl;
         }
         if (changedTriplets == -1) {
             board = SudokuBoard(0);
@@ -385,8 +387,19 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
         // no solution remaining
         throw std::invalid_argument("Given boards to compute is empty, no reduction can be done.");
     }
+    if(!boardsToWork.front().isComputedPossibleValues()) {
+        throw std::invalid_argument("Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
+    }
 
     SudokuBoard &workingBoard = boardsToWork.front();
+
+    bool stopped = false;
+    SudokuBoard solution = solveReduceCrook(workingBoard, stopped);
+    if (!solution.isEmpty()) {
+        SudokuBoard copySolution = workingBoard;
+        boardsToWork.pop_front();
+        return copySolution;
+    }
 
     auto nextEmptyCell = workingBoard.nextEmptyCell();
 
@@ -398,19 +411,9 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
         return solution;
     }
 
-    // possibles values for the cell
-    std::deque<int> possibleValuesInCell;
 
-    // check if the current board can be completed
-    // we use bruteforce in order to check if we are not dealing with a dead leaf
-    // of the tree
-    for (int i = 1; i <= workingBoard.getBlockSize(); ++i) {
-        if (workingBoard.testValueInCell(nextEmptyCell.first, nextEmptyCell.second, i)) {
-            possibleValuesInCell.push_back(i);
-        }
-    }
-
-    if (possibleValuesInCell.empty()) {
+    auto const &possiblesValuesInCell = workingBoard.getPossiblesValuesInCells()[nextEmptyCell.first][nextEmptyCell.second];
+    if (possiblesValuesInCell.empty()) {
         // no solution for this board, next!
         boardsToWork.pop_front();
         return SudokuBoard(0);
@@ -418,10 +421,11 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
 
     // create a new board to check for each possible value
     // and add it to the work queue
-    for (auto const &value: possibleValuesInCell) {
-        workingBoard[nextEmptyCell.first][nextEmptyCell.second] = value;
-        boardsToWork.emplace_back(workingBoard);
-        possibleValuesInCell.pop_front();
+    for (auto const &value: possiblesValuesInCell) {
+        SudokuBoard copyBoard = workingBoard;
+        copyBoard.setValueAndUpdatePossibilities(nextEmptyCell.first, nextEmptyCell.second, value);
+
+        boardsToWork.emplace_back(std::move(copyBoard));
     }
 
     boardsToWork.pop_front();
@@ -436,6 +440,8 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
     // generate sub-problems in order to dispatch work between threads
+    problems.front().recountSolvedCells();
+    problems.front().computePossiblesValuesInCells();
     while (!problems.empty() && problems.size() < COUNT_PROBLEMS_TO_GENERATE_ON_WORKER) {
         SudokuBoard solution = generatePossibilitiesNextCell(problems);
 
@@ -928,6 +934,7 @@ int SudokuBoard::recountSolvedCells() {
 }
 
 void SudokuBoard::computePossiblesValuesInCells() {
+    this->computedPossibleValues = true;
     this->possiblesValuesInCells.clear();
 
     std::set<int> possiblesValues;
@@ -1145,6 +1152,10 @@ bool SudokuBoard::checkIsValidConfig() const {
     }
 
     return true;
+}
+
+bool SudokuBoard::isComputedPossibleValues() const {
+    return computedPossibleValues;
 }
 
 void writeInFile(std::string const &fileName, std::string const &contentFile) {
