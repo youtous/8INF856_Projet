@@ -376,12 +376,7 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
     SudokuBoard &workingBoard = boardsToWork.front();
 
     bool stopped = false;
-    SudokuBoard crookSolution = solveReduceCrook(workingBoard, stopped);
-    if (!crookSolution.isEmpty()) {
-        SudokuBoard copySolution = workingBoard;
-        boardsToWork.pop_front();
-        return copySolution;
-    }
+    solveReduceCrook(workingBoard, stopped);
 
     auto nextEmptyCell = workingBoard.nextEmptyCell();
 
