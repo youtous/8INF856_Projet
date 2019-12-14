@@ -12,11 +12,13 @@
 #include <deque>
 #include <utility>
 #include <set>
+#include <mpi.h>
 
 #define CUSTOM_MPI_SOLUTIONS_TAG            10
 #define CUSTOM_MPI_POSSIBILITIES_TAG            11
 #define CUSTOM_MPI_IDLE_TAG            12
 #define CUSTOM_MPI_STOP_WORK_TAG            13
+#define CUSTOM_MPI_INVALID_SUDOKU_RETURNED            15
 
 
 /**
@@ -42,6 +44,11 @@ private:
      * Count how many cells are marked as solved.
      */
     int countSolvedCells = 0;
+
+    /**
+     * Mark if possibles values has been computed.
+     */
+    bool computedPossibleValues = false;
 
     /**
      * Store possibles values in each cell.
@@ -168,6 +175,11 @@ public:
     void computePossiblesValuesInCells();
 
     /**
+     * @return - true if a computation was done, false otherwise.
+     */
+    bool isComputedPossibleValues() const;
+
+    /**
      * @return - mapping of each possible values in each cell.
      */
     std::vector<std::vector<std::set<int>>> &getPossiblesValuesInCells();
@@ -186,6 +198,7 @@ public:
      * @return - mapping of each possible values in each row.
      */
     std::vector<std::set<int>> &getPossiblesValuesInRows();
+
     /**
      * @return - mapping of each possible values in each column.
      */
@@ -195,6 +208,7 @@ public:
      * @return - mapping of each possible values in each column.
      */
     std::vector<std::set<int>> &getPossiblesValuesInColumns();
+
     /**
      * @return - mapping of each possible values in each block.
      */
@@ -213,6 +227,13 @@ public:
      * @param value - value between 1 and getBlockSize
      */
     void addPossibleValueForCell(int row, int col, int value);
+
+    /**
+     * Remove a possible value for a given cell.
+     * @param row - row of the cell
+     * @param col - col of the cell
+     */
+    void removePossibleValueForCell(int row, int col, int value);
 
     /**
      * @return - true if the board is solved.
@@ -339,6 +360,44 @@ public:
     void setValueAndUpdatePossibilities(int row, int col, int value);
 
     /**
+     * Check a value is not duplicated in the row.
+     * @param row - the row
+     * @param value - the value
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedInRow(int row, int value) const;
+
+    /**
+     * Check a value is not duplicated in the column.
+     * @param col - the column
+     * @param value - the value
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedInCol(int col, int value) const;
+
+    /**
+     * Check a value is not duplicated in the block.
+     * @param row - the row of the cell
+     * @param col - the col of the cell
+     * @param value - the value
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedInBlock(int row, int col, int value) const;
+
+    /**
+     * Check a cell is not duplicated in row, block, column.
+     * @param row - the row of the cell
+     * @param col - the column of the cell
+     * @return - true if not duplicated, false otherwise
+     */
+    bool checkNotDuplicatedCell(int row, int col) const;
+
+    /**
+     * @return - true if the current board has a valid configuration, false otherwise.
+     */
+    bool checkIsValidConfig() const;
+
+    /**
      * @return - board as raw pointer to data
      */
     int *data() {
@@ -359,6 +418,11 @@ public:
      * @return - the SudokuBoard formated with a first value for N, then grid values
      */
     std::string export_str() const;
+
+    /**
+     * @return - fromatted string containing empty cells possibilities
+     */
+    std::string export_possibilities() const;
 
     /**
      * @complexity - O(n) - worst case where n = N
@@ -518,16 +582,6 @@ SudokuBoard createFromStdin();
  */
 void writeInFile(std::string const &fileName, std::string const &contentFile);
 
-
-/**
- * Solve a given SudokuBoard.
- * This function init board computation for solveBoard.
- *
- * @param board - the board to solve
- * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
- */
-SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound);
-
 /**
  * Solve a given SudokuBoard.
  * This function is recursive, it should be started using default
@@ -535,11 +589,21 @@ SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound);
  *
  *
  * @param board - the board to solve
+ * @param solutionFound - a flag used to stop recursion
  * @param row - (optional) the row of the cell to work on
  * @param col - (optional) the column of the cell to work on
  * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
  */
 SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row = 0, int col = 0);
+
+/**
+ * Solve a given SudokuBoard using Crook's algorithm.
+ *
+ * @param board - the board to solve, will be set empty if the algorithm discovered a dead-end
+ * @param solutionFound - a flag used to stop recursion
+ * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
+ */
+SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound);
 
 /**
  * Generate possibilities for the next empty cell of the front board to work.
@@ -567,30 +631,39 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems);
 /**
  * Apply elimination strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
-bool eliminatationStrategy(SudokuBoard &board);
+int eliminatationStrategy(SudokuBoard &board);
 
 /**
  * Apply lone ranger strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
-bool lonerangerStrategy(SudokuBoard &board);
+int lonerangerStrategy(SudokuBoard &board);
 
 /**
  * Apply twins strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
-bool twinsStrategy(SudokuBoard &board);
+int twinsStrategy(SudokuBoard &board);
 
 /**
  * Apply triplets strategy on the SudokuBoard.
  * @param board - the board.
- * @return - true if a change was made, false otherwise.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
  */
-bool tripletsStrategy(SudokuBoard &board);
+int tripletsStrategy(SudokuBoard &board);
+
+/**
+ * Apply a n-plet strategy on the SudokuBoard.
+ *
+ * @param n - the n of plet
+ * @param board - the board.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
+ */
+int npletStrategy(int n, SudokuBoard &board);
 
 /**
  * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.
@@ -653,6 +726,11 @@ void initSolveMPI();
  * Function used for tests
  */
 void tests();
+
+/**
+ * Function used for tests
+ */
+void testsCrook();
 
 /**
  * Function used for tests

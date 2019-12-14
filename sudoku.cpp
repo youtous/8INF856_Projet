@@ -9,6 +9,8 @@
 #include <math.h>
 #include <mpi.h>
 #include <omp.h>
+#include <algorithm>
+#include <chrono>
 #include "sudoku.h"
 
 /**
@@ -54,6 +56,10 @@ int main(int argc, char *argv[]) {
 
     initSolveMPI();
 
+    /**if (processId == 0) {
+        testsCrook();
+    } **/
+
     MPI_Finalize();
     return 0;
 }
@@ -85,6 +91,8 @@ void initSolveMPI() {
 
         // generate the first sub-problems in order to dispatch work between nodes
         problemBoards.emplace_front(std::move(sudoku));
+        problemBoards.front().recountSolvedCells();
+        problemBoards.front().computePossiblesValuesInCells();
         while (!problemBoards.empty() && problemBoards.size() < COUNT_PROBLEMS_TO_GENERATE_ON_MASTER) {
             SudokuBoard solution = generatePossibilitiesNextCell(problemBoards);
 
@@ -204,9 +212,9 @@ void initSolveMPI() {
             }
         } while (true);
 
-        std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size()
+       /* std::cout << "[" << processId << "]: finished to work. " << solutionBoards.size()
                   << " solutions found over "
-                  << processLoad << " problem boards assigned." << std::endl;
+                  << processLoad << " problem boards assigned." << std::endl; */
     }
 
     // collect results
@@ -218,7 +226,7 @@ void initSolveMPI() {
             std::cout << "[" << processId << "] Solution for board:" << std::endl << solutionBoards.front()
                       << std::endl;
         } else {
-            std::cout << "[" << processId << "] No solution found for the board." << std::endl;
+            std::cout << "[" << processId << "] No solution from workers for the board." << std::endl;
         }
     }
     if (successWorkerId == processId) {
@@ -237,19 +245,21 @@ void initSolveMPI() {
                   << p1Time << " seconds. " << std::endl;
         std::cout.unsetf(std::ios::fixed);
     }
+
+    // assert sudoku returned is valid
     if (processId == 0) {
-        // end of the work for everyone !
-        MPI_Abort(MPI_COMM_WORLD, 0);
+        if (!solutionBoards.front().checkIsValidConfig()) {
+            std::cerr << "ERROR : Return sudoku is invalid !" << std::endl;
+            MPI_Abort(MPI_COMM_WORLD, CUSTOM_MPI_INVALID_SUDOKU_RETURNED);
+        } else {
+            // everything is fine
+            // end of the work for everyone !
+            MPI_Abort(MPI_COMM_WORLD, 0);
+        }
     }
 }
 
 // Begin of Solver methods
-SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound) {
-    board.recountSolvedCells();
-    board.computePossiblesValuesInCells();
-    return solveBoard(board, solutionFound);
-}
-
 SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col) {
     if (solutionFound) {
         return SudokuBoard(0);
@@ -263,52 +273,31 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         return board;
     }
 
-    // apply humanistic heuristic
-    bool changedElimination = false;
-    bool changedLoneRangers = false;
-    bool changedTwins = false;
-    bool changedTriplets = false;
-    do {
-        changedElimination = eliminatationStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-        if (changedElimination) {
-            continue;
-        }
+    // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    solveReduceCrook(board, solutionFound);
+    // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    // std::cout << "Time elapsed = " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
 
-        changedLoneRangers = lonerangerStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-        if (changedLoneRangers) {
-            continue;
-        }
-
-        changedTwins = twinsStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-        if (changedTwins) {
-            continue;
-        }
-
-        changedTriplets = tripletsStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
-    } while (changedElimination || changedLoneRangers || changedTwins || changedTriplets);
-
-
-    // next cell values
-    bool jumpRow = (col + 1) >= board.getRowSize();
-    int nextRow = row + (jumpRow ? 1 : 0);
-    int nextCol = jumpRow ? 0 : col + 1;
-
-    // add the current value of the cell in order to propagate
-    if (board[row][col] != 0) {
-        board.addPossibleValueForCell(row, col, board[row][col]);
+    if (board.isEmpty()) {
+        // crook discovered a dead end
+        return board;
     }
+
+    std::pair<int, int> nextCell = board.nextEmptyCell();
+    // solution found !
+    if (nextCell.first == -1) {
+        return board;
+    }
+
+    if (board[row][col] != 0) {
+        // jump to next cell
+        // current cell solved, continue recursion
+        return solveBoard(board, solutionFound, nextCell.first, nextCell.second);
+    }
+
+
+    int nextRow = nextCell.first;
+    int nextCol = nextCell.second;
 
     // cell not solved, try all possible numbers in the cell
     // value is valid, continue in to deep search
@@ -328,6 +317,63 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     return SudokuBoard(0);
 }
 
+SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
+    if (!board.isComputedPossibleValues()) {
+        throw std::invalid_argument(
+                "Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
+    }
+    // apply humanistic heuristic
+    int changedElimination = 0;
+    int changedLoneRangers = 0;
+    int changedTwins = 0;
+    int changedTriplets = 0;
+    do {
+        if (solutionFound) {
+            board = SudokuBoard(0);
+            return board;
+        }
+        changedElimination = eliminatationStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+        if (changedElimination > 0) {
+            //  std::cout << "ELIMINATION = " << changedElimination << std::endl;
+            continue;
+        }
+        if (changedElimination == -1) {
+            board = SudokuBoard(0);
+            return board;
+        }
+
+        changedLoneRangers = lonerangerStrategy(board);
+        if (board.isSolved()) {
+            return board;
+        }
+        if (changedLoneRangers > 0) {
+            // std::cout << "LONE RANGERS = " << changedLoneRangers << std::endl;
+            continue;
+        }
+        if (changedLoneRangers == -1) {
+            board = SudokuBoard(0);
+            return board;
+        }
+
+
+        changedTwins = twinsStrategy(board);
+        if (changedTwins > 0) {
+            // std::cout << "TWINS = " << changedTwins << std::endl;
+            continue;
+        }
+
+        changedTriplets = tripletsStrategy(board);
+        if (changedTriplets > 0) {
+            // std::cout << "TRIPLETS = " << changedTwins << std::endl;
+        }
+    } while (changedElimination > 0 || changedLoneRangers > 0 || changedTwins > 0 || changedTriplets > 0);
+
+    return SudokuBoard(0);
+}
+
 SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork) {
     if (boardsToWork.empty()) {
         // no solution remaining
@@ -336,29 +382,22 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
 
     SudokuBoard &workingBoard = boardsToWork.front();
 
+    bool stopped = false;
+    solveReduceCrook(workingBoard, stopped);
+
     auto nextEmptyCell = workingBoard.nextEmptyCell();
 
     // all cells have a value, we found a solution,
     // add it to the solutions list, JOB IS DONE !
     if (nextEmptyCell.first == -1) {
-        SudokuBoard solution = SudokuBoard(workingBoard);
+        SudokuBoard solution = workingBoard;
         boardsToWork.pop_front();
         return solution;
     }
 
-    // possibles values for the cell
-    std::deque<int> possibleValuesInCell;
 
-    // check if the current board can be completed
-    // we use bruteforce in order to check if we are not dealing with a dead leaf
-    // of the tree
-    for (int i = 1; i <= workingBoard.getBlockSize(); ++i) {
-        if (workingBoard.testValueInCell(nextEmptyCell.first, nextEmptyCell.second, i)) {
-            possibleValuesInCell.push_back(i);
-        }
-    }
-
-    if (possibleValuesInCell.empty()) {
+    auto const &possiblesValuesInCell = workingBoard.getPossiblesValuesInCells()[nextEmptyCell.first][nextEmptyCell.second];
+    if (possiblesValuesInCell.empty()) {
         // no solution for this board, next!
         boardsToWork.pop_front();
         return SudokuBoard(0);
@@ -366,10 +405,11 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
 
     // create a new board to check for each possible value
     // and add it to the work queue
-    for (auto const &value: possibleValuesInCell) {
-        workingBoard[nextEmptyCell.first][nextEmptyCell.second] = value;
-        boardsToWork.emplace_back(workingBoard);
-        possibleValuesInCell.pop_front();
+    for (auto const &value: possiblesValuesInCell) {
+        SudokuBoard copyBoard = workingBoard;
+        copyBoard.setValueAndUpdatePossibilities(nextEmptyCell.first, nextEmptyCell.second, value);
+
+        boardsToWork.emplace_back(std::move(copyBoard));
     }
 
     boardsToWork.pop_front();
@@ -384,6 +424,8 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     MPI_Comm_size(MPI_COMM_WORLD, &countProcess);
 
     // generate sub-problems in order to dispatch work between threads
+    problems.front().recountSolvedCells();
+    problems.front().computePossiblesValuesInCells();
     while (!problems.empty() && problems.size() < COUNT_PROBLEMS_TO_GENERATE_ON_WORKER) {
         SudokuBoard solution = generatePossibilitiesNextCell(problems);
 
@@ -417,7 +459,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                         }
 
                         // update existing values
-                        SudokuBoard solution = solveBoardRecursive(problems[i], solutionFound);
+                        SudokuBoard solution = solveBoard(problems[i], solutionFound);
 
                         if (!solution.isEmpty()) {
 #pragma omp critical
@@ -427,8 +469,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                                 solutions.emplace_back(std::move(solution));
                             }
                             std::cout << "[" << processId << "]{" << omp_get_thread_num()
-                                      << "}: found a solution, the programm should stop." << std::endl
-                                      << "Problem equality : " << (solutions.front() == problems[i]) << std::endl;
+                                      << "}: found a solution, the programm should stop." << std::endl;
                         }
                     }
                 }
@@ -463,12 +504,29 @@ void SudokuBoard::addPossibleValueForCell(int row, int col, int value) {
 
 }
 
+void SudokuBoard::removePossibleValueForCell(int row, int col, int value) {
+    this->getPossiblesValuesInCells()[row][col].erase(value);
+}
+
 void SudokuBoard::setValueAndUpdatePossibilities(int row, int col, int value) {
     this->operator[](row)[col] = value;
     this->getPossiblesValuesInCells()[row][col].clear();
     this->getPossiblesValuesInRows()[row].erase(value);
     this->getPossiblesValuesInColumns()[col].erase(value);
     this->getPossiblesValuesInBlocks()[this->getBlockOfCell(row, col)].erase(value);
+
+    // update possibillities in each cell
+    for (int i = 0; i < countRows(); ++i) {
+        getPossiblesValuesInCells()[row][i].erase(value);
+        getPossiblesValuesInCells()[i][col].erase(value);
+    }
+    const int initBlockRow = this->getStartingRowBlockOfCell(row);
+    const int initBlockCol = this->getStartingColBlockOfCell(col);
+    for (int k = 0; k < this->getSudokuDimension(); ++k) {
+        for (int p = 0; p < this->getSudokuDimension(); ++p) {
+            getPossiblesValuesInCells()[initBlockRow + k][initBlockCol + p].erase(value);
+        }
+    }
 }
 
 bool SudokuBoard::testValueInCellFromCompute(int row, int col, int value) const {
@@ -534,16 +592,29 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
     return true;
 }
 
-bool eliminatationStrategy(SudokuBoard &board) {
-    return false;
+int eliminatationStrategy(SudokuBoard &board) {
+    // A cell has only one value left.
+    const int solvedCellsBefore = board.getCountSolvedCells();
     int solvedCells = board.getCountSolvedCells();
     for (int row = 0; row < board.getColumnSize(); ++row) {
         for (int col = 0; col < board.getRowSize(); ++col) {
-            if (board[row][col] == 0 &&
-                board.getPossiblesValuesInCells()[row][col].size() == 1) {
-                // todo : fix this
-                // board[row][col] = board.getPossiblesValuesInCells()[row][col][0];
-                solvedCells += 1;
+            if (board[row][col] == 0) {
+                if (board.getPossiblesValuesInCells()[row][col].size() == 1) {
+                    auto firstElement = board.getPossiblesValuesInCells()[row][col].begin();
+
+                    // value is available, we set it
+                    if (board.testValueInCellFromCompute(row, col, *firstElement)) {
+                        board.setValueAndUpdatePossibilities(row, col, *firstElement);
+                        solvedCells += 1;
+                    } else {
+                        // value not settable => dead-end
+                        return -1;
+                    }
+                } else if (board.getPossiblesValuesInCells()[row][col].empty()) {
+                    // std::cerr << "cell {" << row << "," << col << "} has no possibility, dead-end" << std::endl;
+                    // no possible value for this cell => dead-end
+                    return -1;
+                }
             }
             if (solvedCells == board.getSize()) {
                 break;
@@ -554,21 +625,371 @@ bool eliminatationStrategy(SudokuBoard &board) {
         }
     }
 
-    bool changed = board.getCountSolvedCells() != solvedCells;
     board.setCountSolvedCells(solvedCells);
-    return changed;
+    return solvedCells - solvedCellsBefore;
 }
 
-bool lonerangerStrategy(SudokuBoard &board) {
-    return false;
+int lonerangerStrategy(SudokuBoard &board) {
+    const int solvedCellsBefore = board.getCountSolvedCells();
+    int solvedCells = board.getCountSolvedCells();
+    // In a row/column/block, a value has only one cell left.
+
+    // temp save coordinates of last value encountered in the row/col/block
+    // rowsCellsValues[row][value] = cell coord {row, col}
+    //                                          -1, -1 => cell found
+    //                                          -2, -2 => too many cells found
+    std::vector<std::vector<std::pair<int, int>>> rowsCellsValues(board.countRows(),
+                                                                  std::vector<std::pair<int, int>>(
+                                                                          board.countRows() + 1,
+                                                                          std::pair<int, int>(
+                                                                                  -1, -1)));
+    std::vector<std::vector<std::pair<int, int>>> columnsCellsValues(board.countColumns(),
+                                                                     std::vector<std::pair<int, int>>(
+                                                                             board.countRows() + 1,
+                                                                             std::pair<int, int>(
+                                                                                     -1, -1)));
+    std::vector<std::vector<std::pair<int, int>>> blocksCellsValues(board.countBlocks(),
+                                                                    std::vector<std::pair<int, int>>(
+                                                                            board.countRows() + 1,
+                                                                            std::pair<int, int>(
+                                                                                    -1, -1)));
+
+    // save last position of each possible value
+    for (int row = 0; row < board.countRows(); ++row) {
+        // save last cell encoutered with the value
+        for (int col = 0; col < board.countColumns(); ++col) {
+            auto const &possibilitiesInCell = board.getPossiblesValuesInCells()[row][col];
+
+            for (auto const possibleValue: possibilitiesInCell) {
+                // check in row
+                auto const &lastCellInRow = rowsCellsValues[row][possibleValue];
+                if (lastCellInRow.first == -1 && lastCellInRow.second == -1) {
+                    // first encounter
+                    rowsCellsValues[row][possibleValue] = std::pair<int, int>(row, col);
+                } else {
+                    // not first encounter, mark as not unique
+                    rowsCellsValues[row][possibleValue] = std::pair<int, int>(-2, -2);
+                }
+
+                // check in col
+                auto const &lastCellInCol = columnsCellsValues[col][possibleValue];
+                if (lastCellInCol.first == -1 && lastCellInCol.second == -1) {
+                    // first encounter
+                    columnsCellsValues[col][possibleValue] = std::pair<int, int>(row, col);
+                } else {
+                    // not first encounter, mark as not unique
+                    columnsCellsValues[col][possibleValue] = std::pair<int, int>(-2, -2);
+                }
+
+                // check in block
+                auto const &lastCellInBlock = blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue];
+                if (lastCellInBlock.first == -1 && lastCellInBlock.second == -1) {
+                    // first encounter
+                    blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue] = std::pair<int, int>(row, col);
+                } else {
+                    // not first encounter, mark as not unique
+                    blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue] = std::pair<int, int>(-2, -2);
+                }
+            }
+        }
+    }
+
+    // reduce with lone ranger found
+    for (int i = 0; i < board.countRows(); ++i) {
+        for (int value = 1; value <= board.countRows(); ++value) {
+            // row
+            auto const &positionRow = rowsCellsValues[i][value];
+            if (positionRow.first >= 0 && positionRow.second >= 0) {
+                board.setValueAndUpdatePossibilities(positionRow.first, positionRow.second, value);
+                solvedCells += 1;
+            }
+
+            // col
+            auto const &positionCol = columnsCellsValues[i][value];
+            if (positionCol.first >= 0 && positionCol.second >= 0) {
+                board.setValueAndUpdatePossibilities(positionCol.first, positionCol.second, value);
+                solvedCells += 1;
+            }
+
+            // block
+            auto const &positionBlock = blocksCellsValues[i][value];
+            if (positionBlock.first >= 0 && positionBlock.second >= 0) {
+                board.setValueAndUpdatePossibilities(positionBlock.first, positionBlock.second, value);
+                solvedCells += 1;
+            }
+        }
+    }
+
+    board.setCountSolvedCells(solvedCells);
+    return solvedCells - solvedCellsBefore;
 }
 
-bool twinsStrategy(SudokuBoard &board) {
-    return false;
+int twinsStrategy(SudokuBoard &board) {
+    // in a row, there are exactly 2 cells containing 2 sames values
+    // eg. {2,3,4} {1,5} {3,4,7}, {7,9}, {1,9},
+    // result will be equals to
+    // {3,4}, {1,5}, {3,4}, {7,9}, {1,9}
+
+    // temp save coordinates of two last value encountered in the row/col/block
+    // rowsCellsValues[row][value] = [coord1{row, col},coord2{row, col}]
+
+    return npletStrategy(2, board);
 }
 
-bool tripletsStrategy(SudokuBoard &board) {
-    return false;
+int tripletsStrategy(SudokuBoard &board) {
+    // same as twin but for triplets
+    // in a row, there are exactly 2 cells containing 2 sames values
+    // eg. {2,3,4} {1,5} {2,3,4,7}, {7,9}, {1,9},
+    // result will be equals to
+    // {2,3,4}, {1,5}, {2,3,4}, {7,9}, {1,9}
+
+    // temp save coordinates of 3 last values encountered in the row/col/block
+    return npletStrategy(3, board);
+}
+
+int npletStrategy(int n, SudokuBoard &board) {
+    int modifiedCells = 0;
+    // generalized twin, triplet strategy
+
+    std::vector<std::vector<std::vector<std::pair<int, int>>>> rowsCellsValues(board.countRows(),
+                                                                               std::vector<std::vector<std::pair<int, int>>>(
+                                                                                       board.countRows() + 1));
+    std::vector<std::vector<std::vector<std::pair<int, int>>>> columnsCellsValues(board.countColumns(),
+                                                                                  std::vector<std::vector<std::pair<int, int>>>(
+                                                                                          board.countRows() + 1));
+    std::vector<std::vector<std::vector<std::pair<int, int>>>> blocksCellsValues(board.countBlocks(),
+                                                                                 std::vector<std::vector<std::pair<int, int>>>(
+                                                                                         board.countRows() + 1));
+
+
+    // save 2 last position of each possible value
+    for (int row = 0; row < board.countRows(); ++row) {
+        for (int col = 0; col < board.countColumns(); ++col) {
+            auto const &possibilitiesInCell = board.getPossiblesValuesInCells()[row][col];
+
+            // skip when not enough possibilities
+            if (possibilitiesInCell.size() < n) {
+                continue;
+            }
+
+            for (auto const possibleValue: possibilitiesInCell) {
+                // add current cell to saved positions
+                rowsCellsValues[row][possibleValue].emplace_back(std::pair<int, int>(row, col));
+                columnsCellsValues[col][possibleValue].emplace_back(std::pair<int, int>(row, col));
+                blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue].emplace_back(
+                        std::pair<int, int>(row, col));
+            }
+        }
+    }
+
+    // reduce
+    for (int i = 0; i < board.countRows(); ++i) {
+        for (int value = 1; value <= board.countRows(); ++value) {
+
+            // row search
+            if (rowsCellsValues[i][value].size() == n) {
+                // sort coordinates in order to compare them
+                std::sort(rowsCellsValues[i][value].begin(), rowsCellsValues[i][value].end());
+
+                // save values of the same coordinates
+                std::vector<int> valuesOfSameCoords;
+                valuesOfSameCoords.emplace_back(value);
+
+                // 2 coordinates for the value, search theses 2 coordinates in other values on the row
+                std::set<int> combinedPossibleValues;
+                for (int nplet = 0; nplet < n; ++nplet) {
+                    auto e1PossiblesValues = board.getPossiblesValuesInCells()[rowsCellsValues[i][value][nplet].first][rowsCellsValues[i][value][nplet].second];
+                    combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                }
+
+                for (int valueSearch : combinedPossibleValues) {
+                    if (value == valueSearch) {
+                        // skip same value
+                        continue;
+                    }
+                    // skip less than n, remove and continue
+                    if (rowsCellsValues[i][valueSearch].size() == n) {
+                        // check the elements cells coords are the same as parent
+                        std::sort(rowsCellsValues[i][valueSearch].begin(), rowsCellsValues[i][valueSearch].end());
+
+                        if (rowsCellsValues[i][valueSearch] == rowsCellsValues[i][value]) {
+                            // same coordinates over 2 differents values, add it to same coords vector
+                            valuesOfSameCoords.emplace_back(valueSearch);
+                        }
+                    }
+                }
+
+                // only n values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == n) {
+                    bool hasCellsToEliminate = false;
+                    for (int nplet = 0; nplet < n; ++nplet) {
+                        auto const &cellCoords = rowsCellsValues[i][value][nplet];
+                        auto const &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                        if (cellPossibilities.size() > n) {
+                            hasCellsToEliminate = true;
+                            break;
+                        }
+                    }
+
+                    if (hasCellsToEliminate) {
+                        for (int nplet = 0; nplet < n; ++nplet) {
+                            auto const &cellCoords = rowsCellsValues[i][value][nplet];
+                            auto &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                            cellPossibilities.clear();
+                            for (auto const &remainingValue: valuesOfSameCoords) {
+                                cellPossibilities.insert(remainingValue);
+                            }
+                        }
+
+                        modifiedCells += n;
+                    }
+                }
+                // empty all coordinates of same coords for next iterations
+                for (auto const &valueP: valuesOfSameCoords) {
+                    rowsCellsValues[i][valueP].clear();
+                }
+            }
+
+            // column search
+            if (columnsCellsValues[i][value].size() == n) {
+                // sort coordinates in order to compare them
+                std::sort(columnsCellsValues[i][value].begin(), columnsCellsValues[i][value].end());
+
+                // save values of the same coordinates
+                std::vector<int> valuesOfSameCoords;
+                valuesOfSameCoords.emplace_back(value);
+
+                // 2 coordinates for the value, search theses 2 coordinates in other values on the row
+                std::set<int> combinedPossibleValues;
+                for (int nplet = 0; nplet < n; ++nplet) {
+                    auto e1PossiblesValues = board.getPossiblesValuesInCells()[columnsCellsValues[i][value][nplet].first][columnsCellsValues[i][value][nplet].second];
+                    combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                }
+
+                for (int valueSearch : combinedPossibleValues) {
+                    if (value == valueSearch) {
+                        // skip same value
+                        continue;
+                    }
+                    // skip less than n, remove and continue
+                    if (columnsCellsValues[i][valueSearch].size() == n) {
+                        // check the elements cells coords are the same as parent
+                        std::sort(columnsCellsValues[i][valueSearch].begin(), columnsCellsValues[i][valueSearch].end());
+
+                        if (columnsCellsValues[i][valueSearch] == columnsCellsValues[i][value]) {
+                            // same coordinates over 2 differents values, add it to same coords vector
+                            valuesOfSameCoords.emplace_back(valueSearch);
+                        }
+                    }
+                }
+
+                // only n values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == n) {
+                    bool hasCellsToEliminate = false;
+                    for (int nplet = 0; nplet < n; ++nplet) {
+                        auto const &cellCoords = columnsCellsValues[i][value][nplet];
+                        auto const &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                        if (cellPossibilities.size() > n) {
+                            hasCellsToEliminate = true;
+                            break;
+                        }
+                    }
+
+                    if (hasCellsToEliminate) {
+                        for (int nplet = 0; nplet < n; ++nplet) {
+                            auto const &cellCoords = columnsCellsValues[i][value][nplet];
+                            auto &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                            cellPossibilities.clear();
+                            for (auto const &remainingValue: valuesOfSameCoords) {
+                                cellPossibilities.insert(remainingValue);
+                            }
+                        }
+
+                        modifiedCells += n;
+                    }
+                }
+                // empty all coordinates of same coords for next iterations
+                for (auto const &valueP: valuesOfSameCoords) {
+                    columnsCellsValues[i][valueP].clear();
+                }
+            }
+
+
+            // block search
+            if (blocksCellsValues[i][value].size() == n) {
+                // sort coordinates in order to compare them
+                std::sort(blocksCellsValues[i][value].begin(), blocksCellsValues[i][value].end());
+
+                // save values of the same coordinates
+                std::vector<int> valuesOfSameCoords;
+                valuesOfSameCoords.emplace_back(value);
+
+                // 2 coordinates for the value, search theses 2 coordinates in other values on the row
+                std::set<int> combinedPossibleValues;
+                for (int nplet = 0; nplet < n; ++nplet) {
+                    auto e1PossiblesValues = board.getPossiblesValuesInCells()[blocksCellsValues[i][value][nplet].first][blocksCellsValues[i][value][nplet].second];
+                    combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                }
+
+                for (int valueSearch : combinedPossibleValues) {
+                    if (value == valueSearch) {
+                        // skip same value
+                        continue;
+                    }
+                    // skip less than n, remove and continue
+                    if (blocksCellsValues[i][valueSearch].size() == n) {
+                        // check the elements cells coords are the same as parent
+                        std::sort(blocksCellsValues[i][valueSearch].begin(), blocksCellsValues[i][valueSearch].end());
+
+                        if (blocksCellsValues[i][valueSearch] == blocksCellsValues[i][value]) {
+                            // same coordinates over 2 differents values, add it to same coords vector
+                            valuesOfSameCoords.emplace_back(valueSearch);
+                        }
+                    }
+                }
+
+                // only n values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == n) {
+                    bool hasCellsToEliminate = false;
+                    for (int nplet = 0; nplet < n; ++nplet) {
+                        auto const &cellCoords = blocksCellsValues[i][value][nplet];
+                        auto const &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                        if (cellPossibilities.size() > n) {
+                            hasCellsToEliminate = true;
+                            break;
+                        }
+                    }
+
+                    if (hasCellsToEliminate) {
+                        for (int nplet = 0; nplet < n; ++nplet) {
+                            auto const &cellCoords = blocksCellsValues[i][value][nplet];
+                            auto &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                            cellPossibilities.clear();
+                            for (auto const &remainingValue: valuesOfSameCoords) {
+                                cellPossibilities.insert(remainingValue);
+                            }
+                        }
+
+                        modifiedCells += n;
+                    }
+                }
+                // empty all coordinates of same coords for next iterations
+                for (auto const &valueP: valuesOfSameCoords) {
+                    blocksCellsValues[i][valueP].clear();
+                }
+            }
+
+        }
+    }
+
+    return modifiedCells;
+
 }
 // End of Solver methods
 
@@ -761,6 +1182,7 @@ int SudokuBoard::recountSolvedCells() {
 }
 
 void SudokuBoard::computePossiblesValuesInCells() {
+    this->computedPossibleValues = true;
     this->possiblesValuesInCells.clear();
 
     std::set<int> possiblesValues;
@@ -889,6 +1311,22 @@ std::ostream &SudokuBoard::SudokuRow::to_ostream(std::ostream &os) const {
 }
 
 
+std::string SudokuBoard::export_possibilities() const {
+    std::stringstream ss;
+    for (int row = 0; row < countRows(); ++row) {
+        for (int col = 0; col < countColumns(); ++col) {
+            if (this->get(row, col) == 0) {
+                ss << "Values for {" << row << "," << col << "} = ";
+                for (auto &v: getPossiblesValuesInCells()[row][col]) {
+                    ss << v << ",";
+                }
+                ss << std::endl;
+            }
+        }
+    }
+    return ss.str();
+}
+
 std::string SudokuBoard::export_str() const {
     std::stringstream exportStr;
     exportStr << n;
@@ -912,6 +1350,76 @@ bool SudokuBoard::operator==(const SudokuBoard &rhs) const {
 
 bool SudokuBoard::operator!=(const SudokuBoard &rhs) const {
     return !(rhs == *this);
+}
+
+bool SudokuBoard::checkNotDuplicatedInRow(int row, int value) const {
+    int found = 0;
+    for (int i = 0; i < getRowSize(); ++i) {
+        if (this->get(row, i) == value) {
+            if (found > 0) {
+                return false;
+            } else {
+                found += 1;
+            }
+        }
+    }
+    return true;
+}
+
+bool SudokuBoard::checkNotDuplicatedInCol(int col, int value) const {
+    int found = 0;
+    for (int i = 0; i < getColumnSize(); ++i) {
+        if (this->get(i, col) == value) {
+            if (found > 0) {
+                return false;
+            } else {
+                found += 1;
+            }
+        }
+    }
+    return true;
+}
+
+bool SudokuBoard::checkNotDuplicatedInBlock(int row, int col, int value) const {
+    int found = 0;
+
+    // check in block
+    const int initBlockRow = this->getStartingRowBlockOfCell(row);
+    const int initBlockCol = this->getStartingColBlockOfCell(col);
+    for (int k = 0; k < this->getSudokuDimension(); ++k) {
+        for (int p = 0; p < this->getSudokuDimension(); ++p) {
+            if (this->get(initBlockRow + k, initBlockCol + p) == value) {
+                if (found > 0) {
+                    return false;
+                } else {
+                    found += 1;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool SudokuBoard::checkNotDuplicatedCell(int row, int col) const {
+    const int value = this->get(row, col);
+    return checkNotDuplicatedInRow(row, value) && checkNotDuplicatedInCol(col, value) &&
+           checkNotDuplicatedInBlock(row, col, value);
+}
+
+bool SudokuBoard::checkIsValidConfig() const {
+    for (int row = 0; row < countRows(); ++row) {
+        for (int col = 0; col < countColumns(); ++col) {
+            if (this->get(row, col) != 0 && !checkNotDuplicatedCell(row, col)) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+bool SudokuBoard::isComputedPossibleValues() const {
+    return computedPossibleValues;
 }
 
 void writeInFile(std::string const &fileName, std::string const &contentFile) {
@@ -973,8 +1481,57 @@ SudokuBoard receiveSudokuBoard(int src, int tag, MPI_Comm pCommunicator) {
 
 
 // Begin of test methods
+void testsCrook() {
+    SudokuBoard sudoku = createFromStdin();
+
+    std::cout << "Affichage du sudoku :" << std::endl
+              << sudoku << std::endl;
+
+    sudoku.computePossiblesValuesInCells();
+    // std::cout << sudoku.export_possibilities() << std::endl;
+
+    int countSolved = 0;
+    for (int row = 0; row < sudoku.countRows(); ++row) {
+        for (int col = 0; col < sudoku.countColumns(); ++col) {
+            countSolved += (sudoku[row][col] == 0 ? 0 : 1);
+        }
+    }
+    std::cout << std::endl;
+    std::cout << "Before crook solved =  " << (countSolved / (double) sudoku.getSize() * 100) << "%, unsolved = "
+              << ((sudoku.getSize() - countSolved) / (double) sudoku.getSize() * 100) << "%" << std::endl;
+
+    std::cout << "Apply crook strategy" << std::endl;
+    bool solutionFound = false;
+    solveReduceCrook(sudoku, solutionFound);
+    std::cout << "After crook :" << std::endl << sudoku;
+
+    countSolved = 0;
+    for (int row = 0; row < sudoku.countRows(); ++row) {
+        for (int col = 0; col < sudoku.countColumns(); ++col) {
+            countSolved += (sudoku[row][col] == 0 ? 0 : 1);
+        }
+    }
+
+    std::cout << std::endl;
+    std::cout << "After crook solved =  " << (countSolved / (double) sudoku.getSize() * 100) << "%, unsolved = "
+              << ((sudoku.getSize() - countSolved) / (double) sudoku.getSize() * 100) << "%" << std::endl;
+    std::cout << "After crook valid ? " << (sudoku.checkIsValidConfig() ? "yes" : "no") << std::endl;
+}
+
 void testFromStdin() {
     SudokuBoard sudoku = createFromStdin();
+
+    // test block method
+    std::stringstream ss;
+    for (int row = 0; row < sudoku.countRows(); ++row) {
+        for (int col = 0; col < sudoku.countColumns(); ++col) {
+            ss << sudoku.getBlockOfCell(row, col) << " ";
+        }
+        ss << std::endl;
+    }
+
+    std::cout << "Affichage des blocs sudoku :" << std::endl
+              << ss.str() << std::endl;
 
     std::cout << "Affichage du sudoku :" << std::endl
               << sudoku << std::endl;

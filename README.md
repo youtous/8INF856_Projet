@@ -16,9 +16,9 @@
 - SudokuBoard illstrated with Deep First : https://github.com/Shivanshu-Gupta/Parallel-SudokuBoard-Solver
 - Paper with deeper SudokuBoard exploration : https://shawnjzlee.me/dl/efficient-parallel-sudoku.pdf
 - SudokuBoard deeper presentation : https://individual.utoronto.ca/rafatrashid/Projects/2012/SudokuPresentation.pptx
-- How to generate a grid : https://stackoverflow.com/questions/4066075/proper-data-structure-to-represent-a-sudoku-puzzle
 
-- Humanistic vs Bruteforce solver ; https://www.andrew.cmu.edu/user/astian/
+- (nice) https://cse.buffalo.edu/faculty/miller/Courses/CSE633/Sankar-Spring-2014-CSE633.pdf
+- (nice) Humanistic vs Bruteforce solver ; https://www.andrew.cmu.edu/user/astian/
 - Crook algorithm : https://github.com/maijoshi/ParaSudoku/blob/master/crook.cpp
 - Bruteforce implementation : https://github.com/hecrj/par/blob/master/lab4/sudoku.c
 
@@ -28,8 +28,3 @@ todo : https://github.com/bryanesmith/SudokuBoard-solver/blob/master/SudokuPuzzl
 ========================
 - Best essay about sudoku solving problem : http://norvig.com/sudoku.html
 - Related implementation in C++: https://github.com/pauek/norvig-sudoku/blob/master/sudoku.en.cc
-
-====
-Simple sudoku solver in C : https://github.com/joubu/SudokuSolver/blob/master/sudoku.c
-
-Lecture about this : https://www.cs.cmu.edu/~mtschant/15414-f07/lectures/sudoku.pdf
