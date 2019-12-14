@@ -737,7 +737,6 @@ int lonerangerStrategy(SudokuBoard &board) {
 }
 
 int twinsStrategy(SudokuBoard &board) {
-    int modifiedCells = 0;
     // in a row, there are exactly 2 cells containing 2 sames values
     // eg. {2,3,4} {1,5} {3,4,7}, {7,9}, {1,9},
     // result will be equals to
@@ -745,8 +744,24 @@ int twinsStrategy(SudokuBoard &board) {
 
     // temp save coordinates of two last value encountered in the row/col/block
     // rowsCellsValues[row][value] = [coord1{row, col},coord2{row, col}]
-    //                                          -1, -1 => cell found
-    //                                          -2, -2 => too many cells found
+
+    return npletStrategy(2, board);
+}
+
+int tripletsStrategy(SudokuBoard &board) {
+    // same as twin but for triplets
+    // in a row, there are exactly 2 cells containing 2 sames values
+    // eg. {2,3,4} {1,5} {2,3,4,7}, {7,9}, {1,9},
+    // result will be equals to
+    // {2,3,4}, {1,5}, {2,3,4}, {7,9}, {1,9}
+
+    // temp save coordinates of 3 last values encountered in the row/col/block
+    return npletStrategy(3, board);
+}
+
+int npletStrategy(int n, SudokuBoard &board) {
+    int modifiedCells = 0;
+    // generalized twin, triplet strategy
 
     std::vector<std::vector<std::vector<std::pair<int, int>>>> rowsCellsValues(board.countRows(),
                                                                                std::vector<std::vector<std::pair<int, int>>>(
@@ -765,7 +780,7 @@ int twinsStrategy(SudokuBoard &board) {
             auto const &possibilitiesInCell = board.getPossiblesValuesInCells()[row][col];
 
             // skip when not enough possibilities
-            if (possibilitiesInCell.size() < 2) {
+            if (possibilitiesInCell.size() < n) {
                 continue;
             }
 
@@ -784,7 +799,7 @@ int twinsStrategy(SudokuBoard &board) {
         for (int value = 1; value <= board.countRows(); ++value) {
 
             // row search
-            if (rowsCellsValues[i][value].size() == 2) {
+            if (rowsCellsValues[i][value].size() == n) {
                 // sort coordinates in order to compare them
                 std::sort(rowsCellsValues[i][value].begin(), rowsCellsValues[i][value].end());
 
@@ -794,19 +809,19 @@ int twinsStrategy(SudokuBoard &board) {
 
                 // 2 coordinates for the value, search theses 2 coordinates in other values on the row
                 std::set<int> combinedPossibleValues;
-                auto e1PossiblesValues = board.getPossiblesValuesInCells()[rowsCellsValues[i][value][0].first][rowsCellsValues[i][value][0].second];
-                combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
-                auto e2PossiblesValues = board.getPossiblesValuesInCells()[rowsCellsValues[i][value][1].first][rowsCellsValues[i][value][1].second];
-                combinedPossibleValues.insert(e2PossiblesValues.begin(), e2PossiblesValues.end());
+                for (int nplet = 0; nplet < n; ++nplet) {
+                    auto e1PossiblesValues = board.getPossiblesValuesInCells()[rowsCellsValues[i][value][nplet].first][rowsCellsValues[i][value][nplet].second];
+                    combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                }
 
                 for (int valueSearch : combinedPossibleValues) {
                     if (value == valueSearch) {
                         // skip same value
                         continue;
                     }
-                    // skip less than 2, remove and continue
-                    if (rowsCellsValues[i][valueSearch].size() == 2) {
-                        // check the two elements are the same as parent
+                    // skip less than n, remove and continue
+                    if (rowsCellsValues[i][valueSearch].size() == n) {
+                        // check the elements cells coords are the same as parent
                         std::sort(rowsCellsValues[i][valueSearch].begin(), rowsCellsValues[i][valueSearch].end());
 
                         if (rowsCellsValues[i][valueSearch] == rowsCellsValues[i][value]) {
@@ -816,24 +831,31 @@ int twinsStrategy(SudokuBoard &board) {
                     }
                 }
 
-                // only 2 values have the pair coordinates, apply the rule
-                if (valuesOfSameCoords.size() == 2) {
-                    auto const &firstCellCoords = rowsCellsValues[i][value][0];
-                    auto const &secondCellCoords = rowsCellsValues[i][value][1];
-                    auto &possibilitiesFirst = board.getPossiblesValuesInCells()[firstCellCoords.first][firstCellCoords.second];
-                    auto &possibilitiesSecond = board.getPossiblesValuesInCells()[secondCellCoords.first][secondCellCoords.second];
+                // only n values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == n) {
+                    bool hasCellsToEliminate = false;
+                    for (int nplet = 0; nplet < n; ++nplet) {
+                        auto const &cellCoords = rowsCellsValues[i][value][nplet];
+                        auto const &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
 
-                    // check other cells to eliminate
-                    if (possibilitiesFirst.size() > 2 || possibilitiesSecond.size() > 2) {
-                        possibilitiesFirst.clear();
-                        possibilitiesSecond.clear();
-
-                        modifiedCells += 2;
-
-                        for (auto const &remainingValue: valuesOfSameCoords) {
-                            possibilitiesFirst.insert(remainingValue);
-                            possibilitiesSecond.insert(remainingValue);
+                        if (cellPossibilities.size() > n) {
+                            hasCellsToEliminate = true;
+                            break;
                         }
+                    }
+
+                    if (hasCellsToEliminate) {
+                        for (int nplet = 0; nplet < n; ++nplet) {
+                            auto const &cellCoords = rowsCellsValues[i][value][nplet];
+                            auto  &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                            cellPossibilities.clear();
+                            for (auto const &remainingValue: valuesOfSameCoords) {
+                                cellPossibilities.insert(remainingValue);
+                            }
+                        }
+
+                        modifiedCells += n;
                     }
                 }
                 // empty all coordinates of same coords for next iterations
@@ -843,7 +865,7 @@ int twinsStrategy(SudokuBoard &board) {
             }
 
             // column search
-            if (columnsCellsValues[i][value].size() == 2) {
+            if (columnsCellsValues[i][value].size() == n) {
                 // sort coordinates in order to compare them
                 std::sort(columnsCellsValues[i][value].begin(), columnsCellsValues[i][value].end());
 
@@ -853,19 +875,19 @@ int twinsStrategy(SudokuBoard &board) {
 
                 // 2 coordinates for the value, search theses 2 coordinates in other values on the row
                 std::set<int> combinedPossibleValues;
-                auto e1PossiblesValues = board.getPossiblesValuesInCells()[columnsCellsValues[i][value][0].first][columnsCellsValues[i][value][0].second];
-                combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
-                auto e2PossiblesValues = board.getPossiblesValuesInCells()[columnsCellsValues[i][value][1].first][columnsCellsValues[i][value][1].second];
-                combinedPossibleValues.insert(e2PossiblesValues.begin(), e2PossiblesValues.end());
+                for (int nplet = 0; nplet < n; ++nplet) {
+                    auto e1PossiblesValues = board.getPossiblesValuesInCells()[columnsCellsValues[i][value][nplet].first][columnsCellsValues[i][value][nplet].second];
+                    combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                }
 
                 for (int valueSearch : combinedPossibleValues) {
                     if (value == valueSearch) {
                         // skip same value
                         continue;
                     }
-                    // skip less than 2, remove and continue
-                    if (columnsCellsValues[i][valueSearch].size() == 2) {
-                        // check the two elements are the same as parent
+                    // skip less than n, remove and continue
+                    if (columnsCellsValues[i][valueSearch].size() == n) {
+                        // check the elements cells coords are the same as parent
                         std::sort(columnsCellsValues[i][valueSearch].begin(), columnsCellsValues[i][valueSearch].end());
 
                         if (columnsCellsValues[i][valueSearch] == columnsCellsValues[i][value]) {
@@ -875,24 +897,31 @@ int twinsStrategy(SudokuBoard &board) {
                     }
                 }
 
-                // only 2 values have the pair coordinates, apply the rule
-                if (valuesOfSameCoords.size() == 2) {
-                    auto const &firstCellCoords = columnsCellsValues[i][value][0];
-                    auto const &secondCellCoords = columnsCellsValues[i][value][1];
-                    auto &possibilitiesFirst = board.getPossiblesValuesInCells()[firstCellCoords.first][firstCellCoords.second];
-                    auto &possibilitiesSecond = board.getPossiblesValuesInCells()[secondCellCoords.first][secondCellCoords.second];
+                // only n values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == n) {
+                    bool hasCellsToEliminate = false;
+                    for (int nplet = 0; nplet < n; ++nplet) {
+                        auto const &cellCoords = columnsCellsValues[i][value][nplet];
+                        auto const &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
 
-                    // check other cells to eliminate
-                    if (possibilitiesFirst.size() > 2 || possibilitiesSecond.size() > 2) {
-                        possibilitiesFirst.clear();
-                        possibilitiesSecond.clear();
-
-                        modifiedCells += 2;
-
-                        for (auto const &remainingValue: valuesOfSameCoords) {
-                            possibilitiesFirst.insert(remainingValue);
-                            possibilitiesSecond.insert(remainingValue);
+                        if (cellPossibilities.size() > n) {
+                            hasCellsToEliminate = true;
+                            break;
                         }
+                    }
+
+                    if (hasCellsToEliminate) {
+                        for (int nplet = 0; nplet < n; ++nplet) {
+                            auto const &cellCoords = columnsCellsValues[i][value][nplet];
+                            auto  &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                            cellPossibilities.clear();
+                            for (auto const &remainingValue: valuesOfSameCoords) {
+                                cellPossibilities.insert(remainingValue);
+                            }
+                        }
+
+                        modifiedCells += n;
                     }
                 }
                 // empty all coordinates of same coords for next iterations
@@ -901,8 +930,9 @@ int twinsStrategy(SudokuBoard &board) {
                 }
             }
 
+
             // block search
-            if (blocksCellsValues[i][value].size() == 2) {
+            if (blocksCellsValues[i][value].size() == n) {
                 // sort coordinates in order to compare them
                 std::sort(blocksCellsValues[i][value].begin(), blocksCellsValues[i][value].end());
 
@@ -912,19 +942,19 @@ int twinsStrategy(SudokuBoard &board) {
 
                 // 2 coordinates for the value, search theses 2 coordinates in other values on the row
                 std::set<int> combinedPossibleValues;
-                auto e1PossiblesValues = board.getPossiblesValuesInCells()[blocksCellsValues[i][value][0].first][blocksCellsValues[i][value][0].second];
-                combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
-                auto e2PossiblesValues = board.getPossiblesValuesInCells()[blocksCellsValues[i][value][1].first][blocksCellsValues[i][value][1].second];
-                combinedPossibleValues.insert(e2PossiblesValues.begin(), e2PossiblesValues.end());
+                for (int nplet = 0; nplet < n; ++nplet) {
+                    auto e1PossiblesValues = board.getPossiblesValuesInCells()[blocksCellsValues[i][value][nplet].first][blocksCellsValues[i][value][nplet].second];
+                    combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                }
 
                 for (int valueSearch : combinedPossibleValues) {
                     if (value == valueSearch) {
                         // skip same value
                         continue;
                     }
-                    // skip less than 2, remove and continue
-                    if (blocksCellsValues[i][valueSearch].size() == 2) {
-                        // check the two elements are the same as parent
+                    // skip less than n, remove and continue
+                    if (blocksCellsValues[i][valueSearch].size() == n) {
+                        // check the elements cells coords are the same as parent
                         std::sort(blocksCellsValues[i][valueSearch].begin(), blocksCellsValues[i][valueSearch].end());
 
                         if (blocksCellsValues[i][valueSearch] == blocksCellsValues[i][value]) {
@@ -934,24 +964,31 @@ int twinsStrategy(SudokuBoard &board) {
                     }
                 }
 
-                // only 2 values have the pair coordinates, apply the rule
-                if (valuesOfSameCoords.size() == 2) {
-                    auto const &firstCellCoords = blocksCellsValues[i][value][0];
-                    auto const &secondCellCoords = blocksCellsValues[i][value][1];
-                    auto &possibilitiesFirst = board.getPossiblesValuesInCells()[firstCellCoords.first][firstCellCoords.second];
-                    auto &possibilitiesSecond = board.getPossiblesValuesInCells()[secondCellCoords.first][secondCellCoords.second];
+                // only n values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == n) {
+                    bool hasCellsToEliminate = false;
+                    for (int nplet = 0; nplet < n; ++nplet) {
+                        auto const &cellCoords = blocksCellsValues[i][value][nplet];
+                        auto const &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
 
-                    // check other cells to eliminate
-                    if (possibilitiesFirst.size() > 2 || possibilitiesSecond.size() > 2) {
-                        possibilitiesFirst.clear();
-                        possibilitiesSecond.clear();
-
-                        modifiedCells += 2;
-
-                        for (auto const &remainingValue: valuesOfSameCoords) {
-                            possibilitiesFirst.insert(remainingValue);
-                            possibilitiesSecond.insert(remainingValue);
+                        if (cellPossibilities.size() > n) {
+                            hasCellsToEliminate = true;
+                            break;
                         }
+                    }
+
+                    if (hasCellsToEliminate) {
+                        for (int nplet = 0; nplet < n; ++nplet) {
+                            auto const &cellCoords = blocksCellsValues[i][value][nplet];
+                            auto  &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+
+                            cellPossibilities.clear();
+                            for (auto const &remainingValue: valuesOfSameCoords) {
+                                cellPossibilities.insert(remainingValue);
+                            }
+                        }
+
+                        modifiedCells += n;
                     }
                 }
                 // empty all coordinates of same coords for next iterations
@@ -959,14 +996,12 @@ int twinsStrategy(SudokuBoard &board) {
                     blocksCellsValues[i][valueP].clear();
                 }
             }
+
         }
     }
 
     return modifiedCells;
-}
 
-int tripletsStrategy(SudokuBoard &board) {
-    return 0;
 }
 // End of Solver methods
 

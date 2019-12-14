@@ -657,6 +657,15 @@ int twinsStrategy(SudokuBoard &board);
 int tripletsStrategy(SudokuBoard &board);
 
 /**
+ * Apply a n-plet strategy on the SudokuBoard.
+ *
+ * @param n - the n of plet
+ * @param board - the board.
+ * @return - number of changed cells or -1 if the board is discovered as not valid.
+ */
+int npletStrategy(int n, SudokuBoard &board);
+
+/**
  * Receive a std::dequeue<SudokuBoard> using MPI and push it at the end of the given queue.
  *
  * @complexity - O(n) where n = count received boards
