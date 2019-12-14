@@ -600,23 +600,25 @@ bool SudokuBoard::testValueInCell(int row, int col, int value) const {
 }
 
 int eliminatationStrategy(SudokuBoard &board) {
-    // todo : figure out why it's bugged
     // A cell has only one value left.
     const int solvedCellsBefore = board.getCountSolvedCells();
     int solvedCells = board.getCountSolvedCells();
     for (int row = 0; row < board.getColumnSize(); ++row) {
         for (int col = 0; col < board.getRowSize(); ++col) {
-            if (board[row][col] == 0 &&
-                board.getPossiblesValuesInCells()[row][col].size() == 1
-                    ) {
-                auto firstElement = board.getPossiblesValuesInCells()[row][col].begin();
+            if (board[row][col] == 0) {
+                if (board.getPossiblesValuesInCells()[row][col].size() == 1) {
+                    auto firstElement = board.getPossiblesValuesInCells()[row][col].begin();
 
-                // value is available, we set it
-                if (board.testValueInCellFromCompute(row, col, *firstElement)) {
-                    board.setValueAndUpdatePossibilities(row, col, *firstElement);
-                    solvedCells += 1;
-                } else {
-                    // value not settable => dead-end
+                    // value is available, we set it
+                    if (board.testValueInCellFromCompute(row, col, *firstElement)) {
+                        board.setValueAndUpdatePossibilities(row, col, *firstElement);
+                        solvedCells += 1;
+                    } else {
+                        // value not settable => dead-end
+                        return -1;
+                    }
+                } else if (board.getPossiblesValuesInCells()[row][col].empty()) {
+                    // no possible value for this cell => dead-end
                     return -1;
                 }
             }
