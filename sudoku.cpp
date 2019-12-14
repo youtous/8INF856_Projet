@@ -606,7 +606,7 @@ int eliminatationStrategy(SudokuBoard &board) {
                         return -1;
                     }
                 } else if (board.getPossiblesValuesInCells()[row][col].empty()) {
-                    std::cerr << "cell {" << row << "," << col << "} has no possibility, dead-end" << std::endl;
+                    // std::cerr << "cell {" << row << "," << col << "} has no possibility, dead-end" << std::endl;
                     // no possible value for this cell => dead-end
                     return -1;
                 }
@@ -830,7 +830,7 @@ int npletStrategy(int n, SudokuBoard &board) {
                     if (hasCellsToEliminate) {
                         for (int nplet = 0; nplet < n; ++nplet) {
                             auto const &cellCoords = rowsCellsValues[i][value][nplet];
-                            auto  &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+                            auto &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
 
                             cellPossibilities.clear();
                             for (auto const &remainingValue: valuesOfSameCoords) {
@@ -896,7 +896,7 @@ int npletStrategy(int n, SudokuBoard &board) {
                     if (hasCellsToEliminate) {
                         for (int nplet = 0; nplet < n; ++nplet) {
                             auto const &cellCoords = columnsCellsValues[i][value][nplet];
-                            auto  &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+                            auto &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
 
                             cellPossibilities.clear();
                             for (auto const &remainingValue: valuesOfSameCoords) {
@@ -963,7 +963,7 @@ int npletStrategy(int n, SudokuBoard &board) {
                     if (hasCellsToEliminate) {
                         for (int nplet = 0; nplet < n; ++nplet) {
                             auto const &cellCoords = blocksCellsValues[i][value][nplet];
-                            auto  &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
+                            auto &cellPossibilities = board.getPossiblesValuesInCells()[cellCoords.first][cellCoords.second];
 
                             cellPossibilities.clear();
                             for (auto const &remainingValue: valuesOfSameCoords) {
