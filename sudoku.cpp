@@ -16,11 +16,11 @@
 /**
  * How many sub-problems to generate on the master node ?
  */
-static int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 512;
+static int COUNT_PROBLEMS_TO_GENERATE_ON_MASTER = 128;
 /**
  * How many sub-problems to generate on the worker node when receiving work ?
  */
-static int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 512;
+static int COUNT_PROBLEMS_TO_GENERATE_ON_WORKER = 32;
 
 static int DEBUG = 0;
 
@@ -264,11 +264,9 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     if (solutionFound) {
         return SudokuBoard(0);
     }
-    // current cell computed
-    const int index = row * board.getRowSize() + col;
 
     // check end reached => terminate recursion
-    if (index >= board.getSize()) {
+    if (board.isSolved()) {
         // the board is solved, return it
         return board;
     }
@@ -283,8 +281,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         return board;
     }
 
-    std::pair<int, int> nextCell = board.nextEmptyCell();
-    // todo : find next cell = cell with less possibles values
+    std::pair<int, int> nextCell = board.nextEmptyCellComputed();
     // solution found !
     if (nextCell.first == -1) {
         return board;
@@ -469,8 +466,8 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                                 solutionFound = true;
                                 solutions.emplace_back(std::move(solution));
                             }
-                            std::cout << "[" << processId << "]{" << omp_get_thread_num()
-                                      << "}: found a solution, the programm should stop." << std::endl;
+                          /**  std::cout << "[" << processId << "]{" << omp_get_thread_num()
+                                      << "}: found a solution, the programm should stop." << std::endl; **/
                         }
                     }
                 }
@@ -482,8 +479,8 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
     problems.clear();
 
     if (!solutions.empty()) {
-        std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: found a solution, returning..."
-                  << std::endl;
+      /**  std::cout << "[" << processId << "]{" << omp_get_thread_num() << "}: found a solution, returning..."
+                  << std::endl; **/
         return solutions.front();
     }
 
