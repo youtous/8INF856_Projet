@@ -19,6 +19,7 @@
 
 - (nice) https://cse.buffalo.edu/faculty/miller/Courses/CSE633/Sankar-Spring-2014-CSE633.pdf
 - (nice) Humanistic vs Bruteforce solver ; https://www.andrew.cmu.edu/user/astian/
+- (nice) Big O https://stackoverflow.com/questions/15327376/algorithm-complexity-big-o-of-sudoku-solver
 - Crook algorithm : https://github.com/maijoshi/ParaSudoku/blob/master/crook.cpp
 - Bruteforce implementation : https://github.com/hecrj/par/blob/master/lab4/sudoku.c
 
