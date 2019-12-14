@@ -430,6 +430,7 @@ public:
      *           if the board is complete, {-1, -1} will be returned
      */
     std::pair<int, int> nextEmptyCell() const;
+    std::pair<int, int> nextEmptyCellComputed() const;
 
     bool operator==(const SudokuBoard &rhs) const;
 

@@ -1086,7 +1086,40 @@ std::pair<int, int> SudokuBoard::nextEmptyCell() const {
         }
     }
 
-    return {-1, -1};
+    return {-1,-1};
+}
+std::pair<int, int> SudokuBoard::nextEmptyCellComputed() const {
+    if (isEmpty()) {
+        return {-1, -1};
+    }
+    if (!computedPossibleValues) {
+        throw std::invalid_argument(
+                "Finding next cell on the board requires pre-computation over possibles values. Please use `computePossibleValues` first.");
+    }
+    std::pair<int, int> lessPossibilitiesCell(-1, -1);
+
+    for (int row = 0; row < this->getColumnSize(); row++) {
+        for (int col = 0; col < this->getRowSize(); col++) {
+            if (this->get(row, col) == 0) {
+                if (lessPossibilitiesCell.first == -1) {
+                    lessPossibilitiesCell.first = row;
+                    lessPossibilitiesCell.second = col;
+                } else {
+                    // compare with other
+                    if (this->getPossiblesValuesInCells()[row][col].size() <
+                        this->getPossiblesValuesInCells()[lessPossibilitiesCell.first][lessPossibilitiesCell.second].size()
+                            ) {
+                        //std::cerr << "found coord" << std::endl;
+
+                        lessPossibilitiesCell.first = row;
+                        lessPossibilitiesCell.second = col;
+                    }
+                }
+            }
+        }
+    }
+
+    return lessPossibilitiesCell;
 }
 
 int SudokuBoard::getBlockOfCell(int row, int col) const {
