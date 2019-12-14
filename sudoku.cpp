@@ -1276,6 +1276,7 @@ void testsCrook() {
             countSolved += (sudoku[row][col] == 0 ? 0 : 1);
         }
     }
+    std::cout << std::endl;
     std::cout << "Before crook solved =  " << (countSolved / (double) sudoku.getSize() * 100) << "%, unsolved = "
               << ((sudoku.getSize() - countSolved) / (double) sudoku.getSize() * 100) << "%" << std::endl;
 
@@ -1291,6 +1292,7 @@ void testsCrook() {
         }
     }
 
+    std::cout << std::endl;
     std::cout << "After crook solved =  " << (countSolved / (double) sudoku.getSize() * 100) << "%, unsolved = "
               << ((sudoku.getSize() - countSolved) / (double) sudoku.getSize() * 100) << "%" << std::endl;
     std::cout << "After crook valid ? " << (sudoku.checkIsValidConfig() ? "yes" : "no") << std::endl;
