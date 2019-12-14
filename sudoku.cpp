@@ -331,7 +331,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedElimination > 0) {
-          //  std::cout << "ELIMINATION = " << changedElimination << std::endl;
+            //  std::cout << "ELIMINATION = " << changedElimination << std::endl;
             continue;
         }
         if (changedElimination == -1) {
@@ -371,7 +371,7 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
             return board;
         }
         if (changedTriplets > 0) {
-           // std::cout << "TRIPLETS = " << changedTwins << std::endl;
+            // std::cout << "TRIPLETS = " << changedTwins << std::endl;
         }
         if (changedTriplets == -1) {
             board = SudokuBoard(0);
@@ -387,8 +387,9 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
         // no solution remaining
         throw std::invalid_argument("Given boards to compute is empty, no reduction can be done.");
     }
-    if(!boardsToWork.front().isComputedPossibleValues()) {
-        throw std::invalid_argument("Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
+    if (!boardsToWork.front().isComputedPossibleValues()) {
+        throw std::invalid_argument(
+                "Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
     }
 
     SudokuBoard &workingBoard = boardsToWork.front();
