@@ -262,10 +262,6 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     if (solutionFound) {
         return SudokuBoard(0);
     }
-    if(!board.isComputedPossibleValues()) {
-        throw std::invalid_argument(
-                "Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
-    }
     // current cell computed
     const int index = row * board.getRowSize() + col;
 
@@ -314,6 +310,10 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
 }
 
 SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
+    if(!board.isComputedPossibleValues()) {
+        throw std::invalid_argument(
+                "Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
+    }
     // apply humanistic heuristic
     int changedElimination = 0;
     int changedLoneRangers = 0;
@@ -384,10 +384,6 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
     if (boardsToWork.empty()) {
         // no solution remaining
         throw std::invalid_argument("Given boards to compute is empty, no reduction can be done.");
-    }
-    if (!boardsToWork.front().isComputedPossibleValues()) {
-        throw std::invalid_argument(
-                "Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
     }
 
     SudokuBoard &workingBoard = boardsToWork.front();
