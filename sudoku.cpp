@@ -9,6 +9,7 @@
 #include <math.h>
 #include <mpi.h>
 #include <omp.h>
+#include <algorithm>
 #include "sudoku.h"
 
 /**
@@ -310,7 +311,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
 }
 
 SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
-    if(!board.isComputedPossibleValues()) {
+    if (!board.isComputedPossibleValues()) {
         throw std::invalid_argument(
                 "Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
     }
@@ -736,16 +737,232 @@ int lonerangerStrategy(SudokuBoard &board) {
 }
 
 int twinsStrategy(SudokuBoard &board) {
-    return 0;
-    const int solvedCellsBefore = board.getCountSolvedCells();
-    int solvedCells = board.getCountSolvedCells();
-   // in a row, there are exactly 2 cells containing 2 sames values
-   // eg. {2,3,4} {1,5} {3,4,7}, {7,9}, {1,9},
-   // result will be equals to
-   // {3,4}, {1,5}, {3,4}, {7,9}, {1,9}
+    int modifiedCells = 0;
+    // in a row, there are exactly 2 cells containing 2 sames values
+    // eg. {2,3,4} {1,5} {3,4,7}, {7,9}, {1,9},
+    // result will be equals to
+    // {3,4}, {1,5}, {3,4}, {7,9}, {1,9}
 
-    board.setCountSolvedCells(solvedCells);
-    return solvedCells - solvedCellsBefore;
+    // temp save coordinates of two last value encountered in the row/col/block
+    // rowsCellsValues[row][value] = [coord1{row, col},coord2{row, col}]
+    //                                          -1, -1 => cell found
+    //                                          -2, -2 => too many cells found
+
+    std::vector<std::vector<std::vector<std::pair<int, int>>>> rowsCellsValues(board.countRows(),
+                                                                               std::vector<std::vector<std::pair<int, int>>>(
+                                                                                       board.countRows() + 1));
+    std::vector<std::vector<std::vector<std::pair<int, int>>>> columnsCellsValues(board.countColumns(),
+                                                                                  std::vector<std::vector<std::pair<int, int>>>(
+                                                                                          board.countRows() + 1));
+    std::vector<std::vector<std::vector<std::pair<int, int>>>> blocksCellsValues(board.countBlocks(),
+                                                                                 std::vector<std::vector<std::pair<int, int>>>(
+                                                                                         board.countRows() + 1));
+
+
+    // save 2 last position of each possible value
+    for (int row = 0; row < board.countRows(); ++row) {
+        for (int col = 0; col < board.countColumns(); ++col) {
+            auto const &possibilitiesInCell = board.getPossiblesValuesInCells()[row][col];
+
+            // skip when not enough possibilities
+            if (possibilitiesInCell.size() < 2) {
+                continue;
+            }
+
+            for (auto const possibleValue: possibilitiesInCell) {
+                // add current cell to saved positions
+                rowsCellsValues[row][possibleValue].emplace_back(std::pair<int, int>(row, col));
+                columnsCellsValues[col][possibleValue].emplace_back(std::pair<int, int>(row, col));
+                blocksCellsValues[board.getBlockOfCell(row, col)][possibleValue].emplace_back(
+                        std::pair<int, int>(row, col));
+            }
+        }
+    }
+
+    // reduce
+    for (int i = 0; i < board.countRows(); ++i) {
+        for (int value = 1; value <= board.countRows(); ++value) {
+
+            // row search
+            if (rowsCellsValues[i][value].size() == 2) {
+                // sort coordinates in order to compare them
+                std::sort(rowsCellsValues[i][value].begin(), rowsCellsValues[i][value].end());
+
+                // save values of the same coordinates
+                std::vector<int> valuesOfSameCoords;
+                valuesOfSameCoords.emplace_back(value);
+
+                // 2 coordinates for the value, search theses 2 coordinates in other values on the row
+                std::set<int> combinedPossibleValues;
+                auto e1PossiblesValues = board.getPossiblesValuesInCells()[rowsCellsValues[i][value][0].first][rowsCellsValues[i][value][0].second];
+                combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                auto e2PossiblesValues = board.getPossiblesValuesInCells()[rowsCellsValues[i][value][1].first][rowsCellsValues[i][value][1].second];
+                combinedPossibleValues.insert(e2PossiblesValues.begin(), e2PossiblesValues.end());
+
+                for (int valueSearch : combinedPossibleValues) {
+                    if (value == valueSearch) {
+                        // skip same value
+                        continue;
+                    }
+                    // skip less than 2, remove and continue
+                    if (rowsCellsValues[i][valueSearch].size() == 2) {
+                        // check the two elements are the same as parent
+                        std::sort(rowsCellsValues[i][valueSearch].begin(), rowsCellsValues[i][valueSearch].end());
+
+                        if (rowsCellsValues[i][valueSearch] == rowsCellsValues[i][value]) {
+                            // same coordinates over 2 differents values, add it to same coords vector
+                            valuesOfSameCoords.emplace_back(valueSearch);
+                        }
+                    }
+                }
+
+                // only 2 values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == 2) {
+                    auto const &firstCellCoords = rowsCellsValues[i][value][0];
+                    auto const &secondCellCoords = rowsCellsValues[i][value][1];
+                    auto &possibilitiesFirst = board.getPossiblesValuesInCells()[firstCellCoords.first][firstCellCoords.second];
+                    auto &possibilitiesSecond = board.getPossiblesValuesInCells()[secondCellCoords.first][secondCellCoords.second];
+
+                    // check other cells to eliminate
+                    if (possibilitiesFirst.size() > 2 || possibilitiesSecond.size() > 2) {
+                        possibilitiesFirst.clear();
+                        possibilitiesSecond.clear();
+
+                        modifiedCells += 2;
+
+                        for (auto const &remainingValue: valuesOfSameCoords) {
+                            possibilitiesFirst.insert(remainingValue);
+                            possibilitiesSecond.insert(remainingValue);
+                        }
+                    }
+                }
+                // empty all coordinates of same coords for next iterations
+                for (auto const &valueP: valuesOfSameCoords) {
+                    rowsCellsValues[i][valueP].clear();
+                }
+            }
+
+            // column search
+            if (columnsCellsValues[i][value].size() == 2) {
+                // sort coordinates in order to compare them
+                std::sort(columnsCellsValues[i][value].begin(), columnsCellsValues[i][value].end());
+
+                // save values of the same coordinates
+                std::vector<int> valuesOfSameCoords;
+                valuesOfSameCoords.emplace_back(value);
+
+                // 2 coordinates for the value, search theses 2 coordinates in other values on the row
+                std::set<int> combinedPossibleValues;
+                auto e1PossiblesValues = board.getPossiblesValuesInCells()[columnsCellsValues[i][value][0].first][columnsCellsValues[i][value][0].second];
+                combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                auto e2PossiblesValues = board.getPossiblesValuesInCells()[columnsCellsValues[i][value][1].first][columnsCellsValues[i][value][1].second];
+                combinedPossibleValues.insert(e2PossiblesValues.begin(), e2PossiblesValues.end());
+
+                for (int valueSearch : combinedPossibleValues) {
+                    if (value == valueSearch) {
+                        // skip same value
+                        continue;
+                    }
+                    // skip less than 2, remove and continue
+                    if (columnsCellsValues[i][valueSearch].size() == 2) {
+                        // check the two elements are the same as parent
+                        std::sort(columnsCellsValues[i][valueSearch].begin(), columnsCellsValues[i][valueSearch].end());
+
+                        if (columnsCellsValues[i][valueSearch] == columnsCellsValues[i][value]) {
+                            // same coordinates over 2 differents values, add it to same coords vector
+                            valuesOfSameCoords.emplace_back(valueSearch);
+                        }
+                    }
+                }
+
+                // only 2 values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == 2) {
+                    auto const &firstCellCoords = columnsCellsValues[i][value][0];
+                    auto const &secondCellCoords = columnsCellsValues[i][value][1];
+                    auto &possibilitiesFirst = board.getPossiblesValuesInCells()[firstCellCoords.first][firstCellCoords.second];
+                    auto &possibilitiesSecond = board.getPossiblesValuesInCells()[secondCellCoords.first][secondCellCoords.second];
+
+                    // check other cells to eliminate
+                    if (possibilitiesFirst.size() > 2 || possibilitiesSecond.size() > 2) {
+                        possibilitiesFirst.clear();
+                        possibilitiesSecond.clear();
+
+                        modifiedCells += 2;
+
+                        for (auto const &remainingValue: valuesOfSameCoords) {
+                            possibilitiesFirst.insert(remainingValue);
+                            possibilitiesSecond.insert(remainingValue);
+                        }
+                    }
+                }
+                // empty all coordinates of same coords for next iterations
+                for (auto const &valueP: valuesOfSameCoords) {
+                    columnsCellsValues[i][valueP].clear();
+                }
+            }
+
+            // block search
+            if (blocksCellsValues[i][value].size() == 2) {
+                // sort coordinates in order to compare them
+                std::sort(blocksCellsValues[i][value].begin(), blocksCellsValues[i][value].end());
+
+                // save values of the same coordinates
+                std::vector<int> valuesOfSameCoords;
+                valuesOfSameCoords.emplace_back(value);
+
+                // 2 coordinates for the value, search theses 2 coordinates in other values on the row
+                std::set<int> combinedPossibleValues;
+                auto e1PossiblesValues = board.getPossiblesValuesInCells()[blocksCellsValues[i][value][0].first][blocksCellsValues[i][value][0].second];
+                combinedPossibleValues.insert(e1PossiblesValues.begin(), e1PossiblesValues.end());
+                auto e2PossiblesValues = board.getPossiblesValuesInCells()[blocksCellsValues[i][value][1].first][blocksCellsValues[i][value][1].second];
+                combinedPossibleValues.insert(e2PossiblesValues.begin(), e2PossiblesValues.end());
+
+                for (int valueSearch : combinedPossibleValues) {
+                    if (value == valueSearch) {
+                        // skip same value
+                        continue;
+                    }
+                    // skip less than 2, remove and continue
+                    if (blocksCellsValues[i][valueSearch].size() == 2) {
+                        // check the two elements are the same as parent
+                        std::sort(blocksCellsValues[i][valueSearch].begin(), blocksCellsValues[i][valueSearch].end());
+
+                        if (blocksCellsValues[i][valueSearch] == blocksCellsValues[i][value]) {
+                            // same coordinates over 2 differents values, add it to same coords vector
+                            valuesOfSameCoords.emplace_back(valueSearch);
+                        }
+                    }
+                }
+
+                // only 2 values have the pair coordinates, apply the rule
+                if (valuesOfSameCoords.size() == 2) {
+                    auto const &firstCellCoords = blocksCellsValues[i][value][0];
+                    auto const &secondCellCoords = blocksCellsValues[i][value][1];
+                    auto &possibilitiesFirst = board.getPossiblesValuesInCells()[firstCellCoords.first][firstCellCoords.second];
+                    auto &possibilitiesSecond = board.getPossiblesValuesInCells()[secondCellCoords.first][secondCellCoords.second];
+
+                    // check other cells to eliminate
+                    if (possibilitiesFirst.size() > 2 || possibilitiesSecond.size() > 2) {
+                        possibilitiesFirst.clear();
+                        possibilitiesSecond.clear();
+
+                        modifiedCells += 2;
+
+                        for (auto const &remainingValue: valuesOfSameCoords) {
+                            possibilitiesFirst.insert(remainingValue);
+                            possibilitiesSecond.insert(remainingValue);
+                        }
+                    }
+                }
+                // empty all coordinates of same coords for next iterations
+                for (auto const &valueP: valuesOfSameCoords) {
+                    blocksCellsValues[i][valueP].clear();
+                }
+            }
+        }
+    }
+
+    return modifiedCells;
 }
 
 int tripletsStrategy(SudokuBoard &board) {
