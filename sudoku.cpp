@@ -534,6 +534,19 @@ void SudokuBoard::setValueAndUpdatePossibilities(int row, int col, int value) {
     this->getPossiblesValuesInRows()[row].erase(value);
     this->getPossiblesValuesInColumns()[col].erase(value);
     this->getPossiblesValuesInBlocks()[this->getBlockOfCell(row, col)].erase(value);
+
+    // update possibillities in each cell
+    for (int i = 0; i < countRows(); ++i) {
+        getPossiblesValuesInCells()[row][i].erase(value);
+        getPossiblesValuesInCells()[i][col].erase(value);
+    }
+    const int initBlockRow = this->getStartingRowBlockOfCell(row);
+    const int initBlockCol = this->getStartingColBlockOfCell(col);
+    for (int k = 0; k < this->getSudokuDimension(); ++k) {
+        for (int p = 0; p < this->getSudokuDimension(); ++p) {
+            getPossiblesValuesInCells()[initBlockRow + k][initBlockCol + p].erase(value);
+        }
+    }
 }
 
 bool SudokuBoard::testValueInCellFromCompute(int row, int col, int value) const {
@@ -1078,6 +1091,22 @@ std::ostream &SudokuBoard::SudokuRow::to_ostream(std::ostream &os) const {
 }
 
 
+std::string SudokuBoard::export_possibilities() const {
+    std::stringstream ss;
+    for (int row = 0; row < countRows(); ++row) {
+        for (int col = 0; col < countColumns(); ++col) {
+            if (this->get(row, col) == 0) {
+                ss << "Values for {" << row << "," << col << "} = ";
+                for (auto &v: getPossiblesValuesInCells()[row][col]) {
+                    ss << v << ",";
+                }
+                ss << std::endl;
+            }
+        }
+    }
+    return ss.str();
+}
+
 std::string SudokuBoard::export_str() const {
     std::stringstream exportStr;
     exportStr << n;
@@ -1239,28 +1268,31 @@ void testsCrook() {
               << sudoku << std::endl;
 
     sudoku.computePossiblesValuesInCells();
+    // std::cout << sudoku.export_possibilities() << std::endl;
 
-    std::stringstream ss;
-
-    /* for (int row = 0; row < sudoku.countRows(); ++row) {
-         for (int col = 0; col < sudoku.countColumns(); ++col) {
-             if (sudoku[row][col] == 0) {
-                 ss << "Values for {" << row << "," << col << "} = ";
-                 for (auto &v: sudoku.getPossiblesValuesInCells()[row][col]) {
-                     ss << v << ",";
-                 }
-                 ss << std::endl;
-             }
-         }
-     } */
+    int countSolved = 0;
+    for (int row = 0; row < sudoku.countRows(); ++row) {
+        for (int col = 0; col < sudoku.countColumns(); ++col) {
+            countSolved += (sudoku[row][col] == 0 ? 0 : 1);
+        }
+    }
+    std::cout << "Before crook solved =  " << (countSolved / (double) sudoku.getSize() * 100) << "%, unsolved = "
+              << ((sudoku.getSize() - countSolved) / (double) sudoku.getSize() * 100) << "%" << std::endl;
 
     std::cout << "Apply crook strategy" << std::endl;
     bool solutionFound = false;
     solveReduceCrook(sudoku, solutionFound);
     std::cout << "After crook :" << std::endl << sudoku;
 
+    countSolved = 0;
+    for (int row = 0; row < sudoku.countRows(); ++row) {
+        for (int col = 0; col < sudoku.countColumns(); ++col) {
+            countSolved += (sudoku[row][col] == 0 ? 0 : 1);
+        }
+    }
 
-    std::cout << ss.str() << std::endl;
+    std::cout << "After crook solved =  " << (countSolved / (double) sudoku.getSize() * 100) << "%, unsolved = "
+              << ((sudoku.getSize() - countSolved) / (double) sudoku.getSize() * 100) << "%" << std::endl;
     std::cout << "After crook valid ? " << (sudoku.checkIsValidConfig() ? "yes" : "no") << std::endl;
 }
 

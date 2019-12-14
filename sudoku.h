@@ -420,6 +420,11 @@ public:
     std::string export_str() const;
 
     /**
+     * @return - fromatted string containing empty cells possibilities
+     */
+    std::string export_possibilities() const;
+
+    /**
      * @complexity - O(n) - worst case where n = N
      * @return - x,y coordinates of the first empty cell found in the board
      *           if the board is complete, {-1, -1} will be returned
