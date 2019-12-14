@@ -521,9 +521,6 @@ void SudokuBoard::addPossibleValueForCell(int row, int col, int value) {
 
 void SudokuBoard::removePossibleValueForCell(int row, int col, int value) {
     this->getPossiblesValuesInCells()[row][col].erase(value);
-    this->getPossiblesValuesInRows()[row].erase(value);
-    this->getPossiblesValuesInColumns()[col].erase(value);
-    this->getPossiblesValuesInBlocks()[this->getBlockOfCell(row, col)].erase(value);
 }
 
 void SudokuBoard::setValueAndUpdatePossibilities(int row, int col, int value) {
