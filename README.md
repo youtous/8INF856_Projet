@@ -29,3 +29,12 @@ todo : https://github.com/bryanesmith/SudokuBoard-solver/blob/master/SudokuPuzzl
 ========================
 - Best essay about sudoku solving problem : http://norvig.com/sudoku.html
 - Related implementation in C++: https://github.com/pauek/norvig-sudoku/blob/master/sudoku.en.cc
+
+```
+Sudoku 3 nbBlanks = 81/2	possibilities=9     O = 33
+Sudoku 4 nbBlanks = 256/2	possibilities=16    O = 144
+Sudoku 5 nbBlanks = 625/2	possibilities=25    O = 289
+Sudoku 6 nbBlanks = 1296/2	possibilities=36    O = 684
+
+O(n ^ m) where n is the number of possibilities for each square (i.e., 9 in classic Sudoku) and m is the number of spaces that are blank.
+```
