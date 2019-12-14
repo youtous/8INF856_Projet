@@ -353,28 +353,14 @@ SudokuBoard solveReduceCrook(SudokuBoard &board, bool &solutionFound) {
 
 
         changedTwins = twinsStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
         if (changedTwins > 0) {
             // std::cout << "TWINS = " << changedTwins << std::endl;
             continue;
         }
-        if (changedTwins == -1) {
-            board = SudokuBoard(0);
-            return board;
-        }
 
         changedTriplets = tripletsStrategy(board);
-        if (board.isSolved()) {
-            return board;
-        }
         if (changedTriplets > 0) {
             // std::cout << "TRIPLETS = " << changedTwins << std::endl;
-        }
-        if (changedTriplets == -1) {
-            board = SudokuBoard(0);
-            return board;
         }
     } while (changedElimination > 0 || changedLoneRangers > 0 || changedTwins > 0 || changedTriplets > 0);
 
@@ -390,8 +376,8 @@ SudokuBoard generatePossibilitiesNextCell(std::deque<SudokuBoard> &boardsToWork)
     SudokuBoard &workingBoard = boardsToWork.front();
 
     bool stopped = false;
-    SudokuBoard solution = solveReduceCrook(workingBoard, stopped);
-    if (!solution.isEmpty()) {
+    SudokuBoard crookSolution = solveReduceCrook(workingBoard, stopped);
+    if (!crookSolution.isEmpty()) {
         SudokuBoard copySolution = workingBoard;
         boardsToWork.pop_front();
         return copySolution;
