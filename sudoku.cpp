@@ -226,7 +226,7 @@ void initSolveMPI() {
             std::cout << "[" << processId << "] Solution for board:" << std::endl << solutionBoards.front()
                       << std::endl;
         } else {
-            std::cout << "[" << processId << "] No solution found for the board." << std::endl;
+            std::cout << "[" << processId << "] No solution from workers for the board." << std::endl;
         }
     }
     if (successWorkerId == processId) {
