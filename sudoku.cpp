@@ -258,15 +258,13 @@ void initSolveMPI() {
 }
 
 // Begin of Solver methods
-SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound) {
-    board.recountSolvedCells();
-    board.computePossiblesValuesInCells();
-    return solveBoard(board, solutionFound);
-}
-
 SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col) {
     if (solutionFound) {
         return SudokuBoard(0);
+    }
+    if(!board.isComputedPossibleValues()) {
+        throw std::invalid_argument(
+                "Given front board have no pre-computation over possibles values. Please use `computePossibleValues` first.");
     }
     // current cell computed
     const int index = row * board.getRowSize() + col;
@@ -476,7 +474,7 @@ SudokuBoard solveProblemsOnNode(std::deque<SudokuBoard> &problems) {
                         }
 
                         // update existing values
-                        SudokuBoard solution = solveBoardRecursive(problems[i], solutionFound);
+                        SudokuBoard solution = solveBoard(problems[i], solutionFound);
 
                         if (!solution.isEmpty()) {
 #pragma omp critical

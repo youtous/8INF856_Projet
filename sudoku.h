@@ -582,17 +582,6 @@ SudokuBoard createFromStdin();
  */
 void writeInFile(std::string const &fileName, std::string const &contentFile);
 
-
-/**
- * Solve a given SudokuBoard.
- * This function init board computation for solveBoard.
- *
- * @param board - the board to solve
- * @param solutionFound - a flag used to stop recursion
- * @return - the solved board if solved or a SudokuBoard with a 0 size if not solved
- */
-SudokuBoard solveBoardRecursive(SudokuBoard &board, bool &solutionFound);
-
 /**
  * Solve a given SudokuBoard.
  * This function is recursive, it should be started using default
