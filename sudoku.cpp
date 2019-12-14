@@ -284,6 +284,7 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
     }
 
     std::pair<int, int> nextCell = board.nextEmptyCell();
+    // todo : find next cell = cell with less possibles values
     // solution found !
     if (nextCell.first == -1) {
         return board;
