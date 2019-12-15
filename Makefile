@@ -6,6 +6,9 @@ CC=mpic++
 CFLAGS=-std=c++11 -fopenmp
 LDFLAGS=
 
+sudoku-serial.o: sudoku-serial.cpp ## Compile sequential app
+	c++ $< -o $@ -std=c++11
+
 sudoku.o: sudoku.cpp ## Compile sequential app
 	$(CC) $< -o $@ $(CFLAGS)
 
