@@ -1,7 +1,3 @@
-//
-// Created by youtous on 30/11/2019.
-//
-
 #ifndef INC_8INF856_PROJET_SUDOKU_H
 #define INC_8INF856_PROJET_SUDOKU_H
 
