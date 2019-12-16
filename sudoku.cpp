@@ -267,6 +267,18 @@ SudokuBoard solveBoard(SudokuBoard &board, bool &solutionFound, int row, int col
         return board;
     }
 
+    /*
+     * This is a chunk strategy for big boards, it helps dealing with massive crook operations
+     * and reduce the amount of cpu used.
+    const int chunk = (int) ((double) board.getSize() / 100.) * 7;
+    if (board.getCountSolvedCells() % chunk == 0) {
+        const int beforeSolve = board.getCountSolvedCells();
+        const int beforeCrook = board.getCountSolvedCells() / (double) board.getSize() * 100;
+        const int afterCrook = board.getCountSolvedCells() / (double) board.getSize() * 100;
+        if(!board.isEmpty()) {
+            std::cout << "count before solve = " << beforeSolve << ", b: " << beforeCrook << "% - a: " << afterCrook << "%" << std::endl;
+        }
+    } */
     // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     solveReduceCrook(board, solutionFound);
     // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
